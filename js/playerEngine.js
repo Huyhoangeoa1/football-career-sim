@@ -27,6 +27,7 @@ export {
   getSubStat
 };
 import { logCareerEvent } from './mediaEngine.js';
+import { saveGame } from './storage.js';
 
 /* =========================================================================
    FAME TIERS & MILESTONES SYSTEM (Hệ Thống Mốc Danh Vọng Không Giới Hạn)
@@ -545,29 +546,173 @@ export function addTrophy(player, trophyName) {
    2. RIVAL DYNAMICS & DERBY OPPONENT MATCHING
    ========================================================================= */
 
-export function calculateDynamicGrowth(player, matchRating, stats = {}) {
+/**
+ * 2. CƠ CHẾ ĐIỂM TIỀM NĂNG THỦ CÔNG (MANUAL SKILL POINTS ALLOCATION)
+ * Thay thế cơ chế tự động rải điểm ngẫu nhiên sau trận đấu.
+ */
+
+/**
+ * Tính toán Điểm Tiềm Năng (Skill Points - SP) kiếm được sau trận đấu
+ * @param {object} matchResult { rating, goals, assists, cleanSheets }
+ * @param {object} player Đối tượng cầu thủ
+ * @returns {{ totalSP: number, ratingSP: number, goalSP: number, assistSP: number, cleanSheetSP: number }}
+ */
+export function calculateEarnedSkillPoints(matchResult = {}, player = null) {
+  const rating = Number(matchResult.rating ?? matchResult.liveRating ?? matchResult.matchRating ?? 6.0);
+  const goals = Number(matchResult.playerGoals ?? matchResult.goals ?? 0);
+  const assists = Number(matchResult.playerAssists ?? matchResult.assists ?? 0);
+  const cleanSheets = Number(
+    matchResult.playerCleanSheets ??
+    matchResult.cleanSheets ??
+    (matchResult.cleanSheet ? 1 : 0) ??
+    0
+  );
+
+  // 1. Dựa trên Điểm Chấm Trận Đấu (Match Rating)
+  let ratingSP = 0;
+  if (rating >= 10.0) {
+    ratingSP = 8;
+  } else if (rating >= 9.0) {
+    ratingSP = 5;
+  } else if (rating >= 8.0) {
+    ratingSP = 3;
+  } else if (rating >= 7.0) {
+    ratingSP = 2;
+  } else if (rating >= 6.0) {
+    ratingSP = 1;
+  } else {
+    ratingSP = 0;
+  }
+
+  // 2. Thưởng Đột Biến (Bonus Milestones)
+  // Mỗi bàn thắng: +1 SP (Cú Hattrick >= 3 bàn nhận thêm +1 SP bonus = tổng 4 SP cho bàn thắng)
+  let goalSP = goals;
+  if (goals >= 3) {
+    goalSP += 1;
+  }
+
+  // Mỗi kiến tạo: +1 SP
+  const assistSP = assists;
+
+  // Hậu vệ/Thủ môn giữ sạch lưới (Clean Sheet): +2 SP
+  let cleanSheetSP = 0;
+  if (player && cleanSheets >= 1) {
+    const pUpper = String(player.position || 'ST').toUpperCase();
+    const isDefOrGk = ['GK', 'DF', 'CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pUpper);
+    if (isDefOrGk) {
+      cleanSheetSP = 2;
+    }
+  }
+
+  const totalSP = ratingSP + goalSP + assistSP + cleanSheetSP;
+
+  return {
+    totalSP,
+    ratingSP,
+    goalSP,
+    assistSP,
+    cleanSheetSP
+  };
+}
+
+/**
+ * Phân bổ Điểm Tiềm Năng (SP) trực tiếp vào 1 trong 29 chỉ số con
+ * @param {object} player
+ * @param {string} subStatKey Key của chỉ số con (ví dụ: 'finishing', 'sprintSpeed')
+ * @param {number} amount Số điểm cần cộng (mặc định 1)
+ * @returns {object} Kết quả phân bổ
+ */
+export function allocateSubStatPoint(player, subStatKey, amount = 1) {
+  if (!player) return { success: false, reason: 'Không tìm thấy dữ liệu cầu thủ.' };
+  ensurePlayerStats(player);
+
+  const currentSP = Math.max(0, Number(player.skillPoints) || 0);
+  if (currentSP < amount) {
+    return { success: false, reason: 'Không đủ Điểm Tiềm Năng (SP) để nâng cấp.' };
+  }
+
+  const curVal = Number(player.subStats ? player.subStats[subStatKey] : undefined);
+  if (isNaN(curVal)) {
+    return { success: false, reason: 'Chỉ số con không hợp lệ.' };
+  }
+  if (curVal >= 99) {
+    return { success: false, reason: 'Chỉ số này đã chạm ngưỡng tối đa (99).' };
+  }
+
+  const actualAdd = Math.min(amount, 99 - curVal, currentSP);
+  if (actualAdd <= 0) {
+    return { success: false, reason: 'Không thể nâng thêm.' };
+  }
+
+  player.skillPoints -= actualAdd;
+  player.subStats[subStatKey] = Math.min(99, curVal + actualAdd);
+
+  // Tìm groupKey cha (pac, sho, pas, dri, def, phy)
+  let parentGroupKey = null;
+  for (const [gKey, gConf] of Object.entries(SUB_STATS_CONFIG)) {
+    if (gConf.stats.some(s => s.key === subStatKey)) {
+      parentGroupKey = gKey;
+      break;
+    }
+  }
+
+  // Tự động đồng bộ 2 chiều lên 6 chỉ số mặt thẻ Face Stat và OVR
+  syncFaceStatsFromSubStats(player);
+  syncLegacyAttrs(player);
+  player.ovr = calculateOVR(player);
+
+  // Tự động lưu game
+  try {
+    saveGame(player);
+  } catch (err) {
+    console.warn('[allocateSubStatPoint] Save error:', err);
+  }
+
+  return {
+    success: true,
+    subStatKey,
+    newSubStatVal: player.subStats[subStatKey],
+    parentGroupKey,
+    newParentFaceVal: parentGroupKey ? player.stats[parentGroupKey] : null,
+    skillPointsRemaining: player.skillPoints,
+    newOVR: player.ovr
+  };
+}
+
+export function calculateDynamicGrowth(player, matchRatingOrResult, stats = {}) {
   if (!player) return null;
   ensurePlayerStats(player);
 
-  // Initialize growth fields if missing (safe fallback for existing saves)
+  let matchRating = 6.0;
+  let statsObj = stats || {};
+
+  if (typeof matchRatingOrResult === 'object' && matchRatingOrResult !== null) {
+    matchRating = Number(matchRatingOrResult.rating ?? matchRatingOrResult.liveRating ?? matchRatingOrResult.matchRating ?? 6.0);
+    statsObj = {
+      goals: matchRatingOrResult.goals ?? matchRatingOrResult.playerGoals ?? stats.goals ?? 0,
+      assists: matchRatingOrResult.assists ?? matchRatingOrResult.playerAssists ?? stats.assists ?? 0,
+      cleanSheets: matchRatingOrResult.cleanSheets ?? matchRatingOrResult.playerCleanSheets ?? (matchRatingOrResult.cleanSheet ? 1 : 0) ?? stats.cleanSheets ?? 0,
+      tackles: matchRatingOrResult.tackles ?? stats.tackles ?? 0,
+      saves: matchRatingOrResult.saves ?? stats.saves ?? 0
+    };
+  } else {
+    matchRating = Number(matchRatingOrResult ?? 6.0);
+  }
+
+  // Initialize growth fields if missing
   if (player.growthExp === undefined) player.growthExp = 0;
   if (player.growthExpTarget === undefined) player.growthExpTarget = 1000;
   if (player.growthLevel === undefined) player.growthLevel = 1;
   if (player.consecutiveGoodMatches === undefined) player.consecutiveGoodMatches = 0;
   if (player.consecutiveBadMatches === undefined) player.consecutiveBadMatches = 0;
+  if (player.skillPoints === undefined) player.skillPoints = 0;
+  if (player.totalSkillPointsEarned === undefined) player.totalSkillPointsEarned = 0;
 
-  // Đảm bảo cả 6 chỉ số chuyên môn nội bộ được lưu dưới dạng số thực thập phân (Float Stats)
-  ['pac', 'sho', 'pas', 'dri', 'def', 'phy'].forEach(k => {
-    player.stats[k] = parseFloat(Number(player.stats[k] !== undefined ? player.stats[k] : 55).toFixed(2));
-  });
-
-  const pUpper = String(player.position || "ST").toUpperCase();
-  const posConf = POSITION_CONFIG[pUpper] || POSITION_CONFIG.ST;
-  const goals = Number(stats.goals || 0);
-  const assists = Number(stats.assists || 0);
-  const cleanSheets = Number(stats.cleanSheets || 0);
-  const tackles = Number(stats.tackles || 0);
-  const saves = Number(stats.saves || 0);
+  const goals = Number(statsObj.goals || 0);
+  const assists = Number(statsObj.assists || 0);
+  const cleanSheets = Number(statsObj.cleanSheets || 0);
+  const tackles = Number(statsObj.tackles || 0);
+  const saves = Number(statsObj.saves || 0);
 
   let earnedExp = 0;
   let performanceTier = 'STABLE'; // 'STELLAR', 'GOOD', 'STABLE', 'POOR'
@@ -600,135 +745,40 @@ export function calculateDynamicGrowth(player, matchRating, stats = {}) {
     earnedExp = 0;
   }
 
-  // 2. NGUYÊN TẮC BẢO VỆ CHỈ SỐ:
-  // TUYỆT ĐỐI KHÔNG ĐƯỢC GIẢM CHỈ SỐ nếu Cầu thủ còn trẻ (dưới 28 tuổi) hoặc khi Phong Độ đang ở mức Ổn định / Cao (Form >= 50).
-  const playerAge = player.age || 16;
-  const playerForm = player.form !== undefined ? player.form : 60;
-  const isProtectedFromRegression = (playerAge < 28) || (playerForm >= 50);
+  // 2. TÍNH ĐIỂM TIỀM NĂNG (SKILL POINTS - SP) THAY THẾ TỰ ĐỘNG RẢI ĐIỂM
+  const earnedSPObj = calculateEarnedSkillPoints({
+    rating: matchRating,
+    goals,
+    assists,
+    cleanSheets
+  }, player);
+  const earnedSP = earnedSPObj.totalSP;
 
-  // 3. TÍNH TOÁN LƯỢNG TĂNG TRƯỞNG VI MÔ (MICRO-PROGRESSION DELTAS CHO 6 CHỈ SỐ FIFA)
-  const deltas = {
-    pac: 0,
-    sho: 0,
-    pas: 0,
-    dri: 0,
-    def: 0,
-    phy: 0
-  };
+  player.skillPoints = (player.skillPoints || 0) + earnedSP;
+  player.totalSkillPointsEarned = (player.totalSkillPointsEarned || 0) + earnedSP;
 
-  let baseGrowthPool = 0;
+  if (earnedSP > 0) {
+    statChanges.push({
+      stat: 'sp',
+      statName: '⚡ Điểm Tiềm Năng (SP)',
+      delta: earnedSP,
+      isMilestone: true,
+      currentValue: player.skillPoints,
+      reason: `Màn trình diễn xuất sắc (${matchRating.toFixed(1)}⭐) đem về +${earnedSP} Điểm Tiềm Năng (SP) để tự do phân bổ!`
+    });
+  }
+
   if (matchRating >= 8.0) {
-    baseGrowthPool = 0.22 + Math.random() * 0.10;
-    summaryText = `⚡ Phong độ thăng hoa (${matchRating.toFixed(1)}⭐): Nâng tầm toàn diện 6 chỉ số FIFA | +${earnedExp} EXP`;
+    summaryText = `⚡ Phong độ thăng hoa (${matchRating.toFixed(1)}⭐): Nhận +${earnedSP} Điểm Tiềm Năng (SP) & +${earnedExp} EXP!`;
   } else if (matchRating >= 7.0) {
-    baseGrowthPool = 0.12 + Math.random() * 0.06;
-    summaryText = `🌟 Màn trình diễn ấn tượng (${matchRating.toFixed(1)}⭐): Tích lũy 6 chỉ số chuyên môn | +${earnedExp} EXP`;
-  } else if (matchRating >= 6.3) {
-    baseGrowthPool = 0.04 + Math.random() * 0.03;
-    summaryText = `👍 Thi đấu tròn vai (${matchRating.toFixed(1)}⭐): Tích lũy vi mô | +${earnedExp} EXP`;
+    summaryText = `🌟 Màn trình diễn ấn tượng (${matchRating.toFixed(1)}⭐): Nhận +${earnedSP} Điểm Tiềm Năng (SP) & +${earnedExp} EXP!`;
+  } else if (matchRating >= 6.0) {
+    summaryText = `👍 Thi đấu tròn vai (${matchRating.toFixed(1)}⭐): Nhận +${earnedSP} Điểm Tiềm Năng (SP) & +${earnedExp} EXP.`;
   } else {
-    baseGrowthPool = 0;
-    summaryText = `⚠️ Dưới phong độ (${matchRating.toFixed(1)}⭐): Đóng băng tăng trưởng (Chỉ số được bảo vệ).`;
-
-    if (!isProtectedFromRegression && playerAge > 32 && player.consecutiveBadMatches >= 4) {
-      isRegression = true;
-      player.consecutiveBadMatches = 0;
-      summaryText = `📉 Lão tướng thoái trào (${playerAge} tuổi): Sa sút phong độ dài hạn, suy giảm thể lực và kỹ năng.`;
-      deltas.pac = -0.15;
-      deltas.phy = -0.12;
-      deltas.sho = -0.08;
-      deltas.pas = -0.05;
-      deltas.dri = -0.08;
-      deltas.def = -0.06;
-    }
+    summaryText = `⚠️ Dưới phong độ (${matchRating.toFixed(1)}⭐): Không nhận được Điểm Tiềm Năng (0 SP).`;
   }
 
-  // Phân bổ điểm nền tảng cơ bản theo trọng số vị trí (Position Weights)
-  if (baseGrowthPool > 0) {
-    const weights = posConf.statWeights || {
-      pac: 0.166, sho: 0.167, pas: 0.167, dri: 0.167, def: 0.166, phy: 0.167
-    };
-    for (const key of ['pac', 'sho', 'pas', 'dri', 'def', 'phy']) {
-      const w = weights[key] || 0.166;
-      // Phân bổ đều và ưu tiên theo vị trí thi đấu
-      deltas[key] += parseFloat((baseGrowthPool * w * 1.5).toFixed(3));
-    }
-  }
-
-  // Ưu tiên tăng trưởng theo hành động thực tế trên sân (Action-based Growth)
-  if (goals > 0) {
-    deltas.sho += parseFloat((goals * 0.12).toFixed(3));
-    deltas.pac += parseFloat((goals * 0.04).toFixed(3));
-    deltas.dri += parseFloat((goals * 0.04).toFixed(3));
-  }
-  if (assists > 0) {
-    deltas.pas += parseFloat((assists * 0.12).toFixed(3));
-    deltas.dri += parseFloat((assists * 0.05).toFixed(3));
-    deltas.sho += parseFloat((assists * 0.03).toFixed(3));
-  }
-  if (tackles > 0) {
-    deltas.def += parseFloat((tackles * 0.06).toFixed(3));
-    deltas.phy += parseFloat((tackles * 0.04).toFixed(3));
-  }
-  if (cleanSheets > 0) {
-    deltas.def += parseFloat((cleanSheets * 0.08).toFixed(3));
-    deltas.phy += parseFloat((cleanSheets * 0.05).toFixed(3));
-  }
-  if (saves > 0) {
-    deltas.def += parseFloat((saves * 0.06).toFixed(3));
-    deltas.phy += parseFloat((saves * 0.04).toFixed(3));
-    deltas.dri += parseFloat((saves * 0.03).toFixed(3));
-  }
-
-  // Thưởng chuỗi phong độ rực sáng (mỗi 3 trận liên tiếp rating >= 7.0)
-  if (player.consecutiveGoodMatches >= 3 && player.consecutiveGoodMatches % 3 === 0) {
-    const primaryKey = posConf.group === 'DF' ? 'def' : (posConf.group === 'MF' ? 'pas' : 'sho');
-    const boostKey = Math.random() < 0.5 ? 'pac' : primaryKey;
-    deltas[boostKey] += 0.25;
-  }
-
-  // 4. ÁP DỤNG DELTA THẬP PHÂN TRỰC TIẾP VÀO PLAYER.STATS VÀ PHÁT HIỆN CỘT MỐC LÊN ĐIỂM NGUYÊN (MILESTONE ROLLOVER)
-  const STAT_DISPLAY_NAMES = {
-    pac: '⚡ Tốc Độ (PAC)',
-    sho: '🎯 Dứt Điểm (SHO)',
-    pas: '👟 Chuyền Bóng (PAS)',
-    dri: '🪄 Rê Bóng (DRI)',
-    def: '🛡️ Phòng Ngự (DEF)',
-    phy: '💪 Thể Chất (PHY)'
-  };
-
-  for (const stat of ['pac', 'sho', 'pas', 'dri', 'def', 'phy']) {
-    const delta = deltas[stat];
-    if (delta !== 0) {
-      const oldVal = player.stats[stat];
-      const oldInt = Math.floor(oldVal);
-      player.stats[stat] = Math.max(10, Math.min(99, parseFloat((oldVal + delta).toFixed(2))));
-      const newInt = Math.floor(player.stats[stat]);
-      const sName = STAT_DISPLAY_NAMES[stat] || stat.toUpperCase();
-
-      if (newInt > oldInt) {
-        statChanges.push({
-          stat,
-          statName: sName,
-          delta: newInt - oldInt,
-          isMilestone: true,
-          currentValue: newInt,
-          reason: `Tích lũy thực chiến vi mô đưa ${sName} cán mốc thăng cấp chính thức lên ${newInt}!`
-        });
-      } else if (newInt < oldInt && !isProtectedFromRegression) {
-        statChanges.push({
-          stat,
-          statName: sName,
-          delta: newInt - oldInt,
-          isRegression: true,
-          currentValue: newInt,
-          reason: `Suy thoái tuổi tác làm ${sName} giảm xuống ${newInt}!`
-        });
-      }
-    }
-  }
-
-  // 5. CỘNG DỒN EXP VÀ KIỂM TRA ĐỘT PHÁ CẤP TĂNG TRƯỞNG (LEVEL UP)
+  // 3. CỘNG DỒN EXP VÀ KIỂM TRA ĐỘT PHÁ CẤP TĂNG TRƯỞNG (LEVEL UP)
   const oldExp = player.growthExp;
   player.growthExp += earnedExp;
 
@@ -738,28 +788,22 @@ export function calculateDynamicGrowth(player, matchRating, stats = {}) {
     player.growthExp -= player.growthExpTarget;
     player.growthExpTarget = Math.round(1000 + (player.growthLevel - 1) * 120);
 
-    // Thưởng đột phá level up: cộng +0.50 vào một chỉ số ngẫu nhiên trong 6 chỉ số FIFA
-    const targetAttrs = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'];
-    const chosenAttr = targetAttrs[Math.floor(Math.random() * targetAttrs.length)];
-    const oldIntL = Math.floor(player.stats[chosenAttr]);
-    player.stats[chosenAttr] = Math.min(99, parseFloat((player.stats[chosenAttr] + 0.50).toFixed(2)));
-    const newIntL = Math.floor(player.stats[chosenAttr]);
-    const chosenName = STAT_DISPLAY_NAMES[chosenAttr] || chosenAttr.toUpperCase();
+    // Thưởng đột phá level up: cộng thêm +2 SP vào kho điểm tiềm năng
+    const levelUpBonusSP = 2;
+    player.skillPoints = (player.skillPoints || 0) + levelUpBonusSP;
+    player.totalSkillPointsEarned = (player.totalSkillPointsEarned || 0) + levelUpBonusSP;
 
-    if (newIntL > oldIntL) {
-      statChanges.push({
-        stat: chosenAttr,
-        statName: chosenName,
-        delta: newIntL - oldIntL,
-        isMilestone: true,
-        currentValue: newIntL,
-        reason: `Đột phá Cột mốc Tăng Trưởng Cấp ${player.growthLevel}! ${chosenName} thăng tiến lên ${newIntL}!`
-      });
-    }
+    statChanges.push({
+      stat: 'sp',
+      statName: '⚡ Đột Phá Cấp Độ',
+      delta: levelUpBonusSP,
+      isMilestone: true,
+      currentValue: player.skillPoints,
+      reason: `Đột phá Cột mốc Tăng Trưởng Cấp ${player.growthLevel}! Thưởng thêm +${levelUpBonusSP} SP tự do cộng điểm!`
+    });
   }
 
-  // Đồng bộ hai chiều sang subStats, attr1..4 và ovr
-  syncSubStatsFromFaceStats(player);
+  syncFaceStatsFromSubStats(player);
   syncLegacyAttrs(player);
   player.ovr = calculateOVR(player);
 
@@ -776,7 +820,12 @@ export function calculateDynamicGrowth(player, matchRating, stats = {}) {
     summaryText,
     statChanges,
     isLevelUp,
+    levelUpBonusSP: isLevelUp ? 2 : 0,
     isRegression,
+    earnedSP,
+    earnedSkillPoints: earnedSP,
+    earnedSPBreakdown: earnedSPObj,
+    totalSkillPoints: player.skillPoints,
     consecutiveGoodMatches: player.consecutiveGoodMatches,
     consecutiveBadMatches: player.consecutiveBadMatches
   };

@@ -6,7 +6,7 @@ import { LIFESTYLE_CATALOG, SIGNATURE_TRAITS, SUB_STATS_CONFIG } from './data.js
 import { CARD_AVATARS, getAvatarById } from './cardAvatars.js';
 import { CARD_THEMES, getThemeById, checkThemeUnlocked } from './cardThemes.js';
 import { getPlayer } from './state.js';
-import { ensurePlayerStats, calculateOVR, getFameTier } from './playerEngine.js';
+import { ensurePlayerStats, calculateOVR, getFameTier, allocateSubStatPoint } from './playerEngine.js';
 import { formatCurrency } from './uiCore.js';
 /* =========================================================================
    4. ACTIVE BUFFS STRIP
@@ -776,9 +776,21 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
 
 let _isSubStatsAccordionInit = false;
 
+export function renderSkillPointsBadge(player = getPlayer()) {
+  const spValEl = document.getElementById('spCountValue');
+  const badgeEl = document.getElementById('spTrackerBadge');
+  if (!spValEl || !badgeEl) return;
+  const sp = Math.max(0, Number(player?.skillPoints) || 0);
+  spValEl.innerText = sp;
+  badgeEl.classList.toggle('has-sp', sp > 0);
+}
+
 export function renderDetailedSubStats(player = getPlayer()) {
   if (!player || !player.subStats) return;
 
+  renderSkillPointsBadge(player);
+
+  const sp = Math.max(0, Number(player.skillPoints) || 0);
   const statGroups = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'];
 
   statGroups.forEach(groupKey => {
@@ -791,6 +803,7 @@ export function renderDetailedSubStats(player = getPlayer()) {
     let html = '<div class="substats-grid-inner">';
     groupConf.stats.forEach(s => {
       const val = Math.max(1, Math.min(99, Math.round(Number(player.subStats[s.key]) || 50)));
+      const canAdd = sp > 0 && val < 99;
 
       let badgeClass = 'score-red';
       let fillClass = 'fill-red';
@@ -814,10 +827,20 @@ export function renderDetailedSubStats(player = getPlayer()) {
             <span class="substat-label-vi">
               ${s.nameVi} <span class="substat-label-en">(${s.nameEn})</span>
             </span>
-            <span class="substat-score ${badgeClass}">${val}</span>
+            <div class="substat-actions-row">
+              <span class="substat-score ${badgeClass}" id="substatVal_${s.key}">${val}</span>
+              <button class="btn-substat-plus ${canAdd ? 'can-add' : 'disabled'}"
+                      id="btnSubStatPlus_${s.key}"
+                      data-substat-key="${s.key}"
+                      type="button"
+                      ${!canAdd ? 'disabled' : ''}
+                      title="${canAdd ? `Cộng 1 SP vào ${s.nameVi} (${val} ➔ ${val + 1})` : (val >= 99 ? 'Đã đạt tối đa 99' : 'Cần Điểm Tiềm Năng (SP) để nâng cấp')}">
+                +
+              </button>
+            </div>
           </div>
           <div class="substat-bar-mini-bg">
-            <div class="substat-bar-mini-fill ${fillClass}" style="width: ${val}%;"></div>
+            <div class="substat-bar-mini-fill ${fillClass}" id="substatBar_${s.key}" style="width: ${val}%;"></div>
           </div>
         </div>
       `;
@@ -825,6 +848,33 @@ export function renderDetailedSubStats(player = getPlayer()) {
     html += '</div>';
 
     panel.innerHTML = html;
+
+    // Gắn sự kiện click cho các nút cộng điểm [+]
+    const plusButtons = panel.querySelectorAll('.btn-substat-plus');
+    plusButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const key = btn.getAttribute('data-substat-key');
+        if (!key) return;
+
+        const res = allocateSubStatPoint(player, key, 1);
+        if (res && res.success) {
+          const sObj = groupConf.stats.find(item => item.key === key);
+          const sName = sObj ? sObj.nameVi : key;
+          _showFcsToast(`⚡ +1 ${sName} (${res.newSubStatVal})! Còn ${res.skillPointsRemaining} SP.`);
+
+          // Render lại toàn bộ subStats mà vẫn giữ nguyên trạng thái mở của panel
+          renderDetailedSubStats(player);
+
+          // Cập nhật thẻ cầu thủ và Face Stats trên Dashboard theo thời gian thực
+          if (typeof window !== 'undefined' && typeof window.updateUI === 'function') {
+            window.updateUI(player);
+          }
+        } else if (res && res.reason) {
+          _showFcsToast(`⚠️ ${res.reason}`);
+        }
+      };
+    });
   });
 
   initSubStatsAccordionListeners();

@@ -372,11 +372,16 @@
         <!-- Right Stats & Rival Card -->
         <div class="card stats-card">
           <div>
-            <div class="stats-block-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div class="stats-block-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
               <div class="stats-block-title" style="margin-bottom: 0;">CHỈ SỐ CHUYÊN MÔN (FIFA ATTRIBUTES)</div>
-              <button class="btn-toggle-substats" id="btnToggleAllSubStats" type="button" title="Mở rộng / Thu gọn 29 chỉ số chuyên sâu">
-                🔍 Xem Chi Tiết 29 Chỉ Số
-              </button>
+              <div class="stats-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div class="sp-tracker-badge" id="spTrackerBadge" title="Điểm Tiềm Năng (Skill Points) dùng để nâng cấp thủ công 29 chỉ số phụ">
+                  ⚡ Điểm Tiềm Năng: <b id="spCountValue">0</b> SP
+                </div>
+                <button class="btn-toggle-substats" id="btnToggleAllSubStats" type="button" title="Mở rộng / Thu gọn 29 chỉ số chuyên sâu">
+                  🔍 Xem Chi Tiết 29 Chỉ Số
+                </button>
+              </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
               <!-- 1. PAC -->

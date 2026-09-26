@@ -116,6 +116,10 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     // 29 Detailed Sub-Attributes (EA FC 26 standard)
     subStats: initialSubStats,
 
+    // Hệ thống Điểm Tiềm Năng Thủ Công (Manual Skill Points Allocation)
+    skillPoints: 0,
+    totalSkillPointsEarned: 0,
+
     // 4 Position-specific core attributes (0-99)
     attr1,
     attr2,

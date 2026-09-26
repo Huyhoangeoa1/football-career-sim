@@ -132,6 +132,14 @@ export function _migrate(data) {
     data.skillMovesTrainProgress = 0;
   }
 
+  // Migration: Ensure Skill Points (SP) exist
+  if (data.skillPoints === undefined || !Number.isInteger(data.skillPoints)) {
+    data.skillPoints = 10; // Tặng kèm 10 SP khởi đầu cho save cũ để trải nghiệm cộng tay ngay
+  }
+  if (data.totalSkillPointsEarned === undefined || !Number.isInteger(data.totalSkillPointsEarned)) {
+    data.totalSkillPointsEarned = data.skillPoints;
+  }
+
   // Migration: Ensure 6 Face Stats exist
   if (!data.stats || typeof data.stats !== 'object') {
     const pos = data.position || 'ST';

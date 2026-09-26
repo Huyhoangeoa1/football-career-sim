@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    UI MATCH ARENA — INTERACTIVE MATCH CENTER & DEEP TICK-BASED MATCH ENGINE
    Extracted from ui.js
    ========================================================================= */
@@ -598,6 +598,17 @@ export function openMatchCenterModal(player, matchData, onComplete) {
             <span>${g.currentExp} / ${g.targetExp} EXP</span>
             <span>${g.expPercent}%</span>
           </div>
+
+          ${(g.earnedSkillPoints !== undefined && g.earnedSkillPoints > 0) ? `
+          <div style="margin-top: 10px; background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(16, 185, 129, 0.25)); border: 1px solid rgba(234, 179, 8, 0.6); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 10px rgba(234, 179, 8, 0.25);">
+            <span style="color: #fde047; font-weight: 800; font-size: 0.84rem;">
+              ⚡ Nhận được +${g.earnedSkillPoints} Điểm Tiềm Năng (SP) nhờ phong độ xuất sắc!
+            </span>
+            <span style="background: rgba(234, 179, 8, 0.25); color: #fef08a; font-weight: 800; font-size: 0.78rem; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(234, 179, 8, 0.4);">
+              Kho: ${player.skillPoints || 0} SP
+            </span>
+          </div>
+          ` : ''}
 
           ${statChangesHtml}
           ${levelUpHtml}

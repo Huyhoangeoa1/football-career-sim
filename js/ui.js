@@ -51,8 +51,14 @@ export {
   exportFcsCardPng,
   copyCareerSummaryText,
   renderDetailedSubStats,
+  renderSkillPointsBadge,
   initSubStatsAccordionListeners
 } from './uiPlayer.js';
+
+export {
+  calculateEarnedSkillPoints,
+  allocateSubStatPoint
+} from './playerEngine.js';
 
 // ── Signature Traits, Golden Shoe & Ballon D'Or Trackers ─────────────────
 export {
