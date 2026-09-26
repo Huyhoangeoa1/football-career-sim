@@ -2,7 +2,15 @@
    FOOTBALL CAREER SIMULATOR — STATE MANAGEMENT MODULE
    ========================================================================= */
 
-import { NATIONALITIES_DATA, YOUTH_ACADEMIES, RIVALS_DATA, getPositionGroup, getRandomPlayerNameByNat } from './data.js';
+import { 
+  NATIONALITIES_DATA, 
+  YOUTH_ACADEMIES, 
+  RIVALS_DATA, 
+  getPositionGroup, 
+  getRandomPlayerNameByNat,
+  getInitialStatsForPosition,
+  generateSubStatsFromFaceStats 
+} from './data.js';
 
 export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", academyId = null) {
   const nationality = NATIONALITIES_DATA.find(n => n.id === natId || n.idAlias === natId || n.code === natId) || NATIONALITIES_DATA[0];
@@ -86,6 +94,11 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     ? customName.trim() 
     : (getRandomPlayerNameByNat(nationality.id) || "Tân Binh Vô Danh");
 
+  const initialFaceStats = getInitialStatsForPosition ? getInitialStatsForPosition(pos) : {
+    pac: 55, sho: 55, pas: 55, dri: 55, def: 55, phy: 55
+  };
+  const initialSubStats = generateSubStatsFromFaceStats(initialFaceStats, pos);
+
   return {
     name: finalName,
     nationality: nationality,
@@ -97,6 +110,12 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     seasonCount: 1,
     seasonsPlayed: 0,
     
+    // 6 Face Stats (FIFA / EA FC standard)
+    stats: initialFaceStats,
+
+    // 29 Detailed Sub-Attributes (EA FC 26 standard)
+    subStats: initialSubStats,
+
     // 4 Position-specific core attributes (0-99)
     attr1,
     attr2,

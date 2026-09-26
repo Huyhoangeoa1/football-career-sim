@@ -2,7 +2,7 @@
    FOOTBALL CAREER SIMULATOR — EVENTS & MODALS MODULE
    ========================================================================= */
 
-import { EVENT_POOL, KEY_MATCH_MOMENTS, ALL_CLUBS } from './data.js';
+import { EVENT_POOL, KEY_MATCH_MOMENTS, ALL_CLUBS, getSubStat } from './data.js';
 import { getOverallPower, rollInjuryChance, recordChronicleMilestone, getTransferWindowStatus } from './engine.js';
 
 /* =========================================================================
@@ -1153,20 +1153,27 @@ export const FW_MF_MOMENT_BANK = [
     ballPitchPercent: 80,
     choices: [
       { text: (p) => (p && p.skillMoves >= 6) ? '🪄 [Trickster+] Đảo chân Elastico kép xâu kim qua 2 hậu vệ xộc thẳng vào cấm địa' : 'Đi bóng lắt léo vượt qua 2 hậu vệ xộc thẳng vào cấm địa',
-        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ qua người & giảm 50% chấn thương' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ)` : 'Yêu cầu: Rê Bóng + Thể Lực'),
+        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ qua người [Rê Bóng + Khéo Léo + Thăng Bằng]' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ) [Rê Bóng + Khéo Léo + Thăng Bằng]` : 'Yêu cầu: Rê Bóng + Khéo Léo + Thăng Bằng (DRI + AGI + BAL)'),
         isDribble: true,
         successChance: (p) => {
           const sm = p?.skillMoves || 3;
           const smBonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
-          return Math.min(0.95, (p.attr4 * 0.007) + (p.stam * 0.002) + smBonus);
+          const drib = getSubStat(p, 'dribbling', 'dri');
+          const agi = getSubStat(p, 'agility', 'dri');
+          const bal = getSubStat(p, 'balance', 'dri');
+          return Math.min(0.95, (drib * 0.004) + (agi * 0.003) + (bal * 0.002) + smBonus);
         },
         successText: (p) => (p && p.skillMoves >= 6) ? 'ẢO THUẬT GIA TRICKSTER+! Cú Elastico kép xâu kim 2 hậu vệ không thể tin nổi trước khi nã đại bác tung nóc lưới!' : 'VŨ ĐIỆU SÂN CỎ! Nhảy múa qua 2 hậu vệ rồi dứt điểm tung nóc lưới!',
         failureText: 'Hậu vệ đối phương phạm lỗi kín lấy bóng.',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.form = Math.min(99, p.form + 6); },
         onFailure: (p) => { p.morale = Math.max(40, p.morale - 5); } },
       { text: 'Nã đại bác sút xa từ cự ly 25 mét',
-        statHint: 'Yêu cầu: Dứt Điểm + Bản Lĩnh',
-        successChance: (p) => Math.min(0.85, (p.attr1 * 0.007) + (p.morale * 0.002)),
+        statHint: 'Yêu cầu: Sút Xa + Lực Sút (Long Shots + Shot Power)',
+        successChance: (p) => {
+          const lShot = getSubStat(p, 'longShots', 'sho');
+          const sPow = getSubStat(p, 'shotPower', 'sho');
+          return Math.min(0.88, (lShot * 0.005) + (sPow * 0.004) + ((p.morale || 70) * 0.001));
+        },
         successText: 'BÀN THẮNG ĐỂ ĐỜI! Cú sút như trái phá với vận tốc 115 km/h không thể cản phá!',
         failureText: 'Cú sút đập trúng xà ngang nảy ra ngoài!',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.fame = Math.min(99, p.fame + 6); },
@@ -1181,15 +1188,24 @@ export const FW_MF_MOMENT_BANK = [
     ballPitchPercent: 85,
     choices: [
       { text: 'Sút xoáy hình quả chuối vượt qua hàng rào vào góc chết',
-        statHint: 'Yêu cầu: Dứt Điểm + Phong Độ',
-        successChance: (p) => Math.min(0.86, (p.attr1 * 0.007) + (p.form * 0.003)),
+        statHint: 'Yêu cầu: Đá Phạt + Độ Xoáy + Lực Sút (FK + Curve + Shot Power)',
+        successChance: (p) => {
+          const fk = getSubStat(p, 'freeKick', 'pas');
+          const crv = getSubStat(p, 'curve', 'pas');
+          const pow = getSubStat(p, 'shotPower', 'sho');
+          return Math.min(0.92, (fk * 0.004) + (crv * 0.003) + (pow * 0.002) + ((p.form || 70) * 0.001));
+        },
         successText: 'SIÊU PHẨM SÚT PHẠT! Bóng lượn qua hàng rào găm thẳng vào góc chữ A tuyệt mỹ!',
         failureText: 'Bóng dội trúng hàng rào bật ra ngoài.',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.fame = Math.min(99, p.fame + 5); p.form = 99; },
         onFailure: (p) => { p.form = Math.max(35, p.form - 6); } },
       { text: 'Sút chìm hiểm hóc dưới chân hàng rào nhảy lên',
-        statHint: 'Yêu cầu: Nhãn Quan (Vision)',
-        successChance: (p) => Math.min(0.83, (p.attr3 * 0.007) + (p.attr2 * 0.002)),
+        statHint: 'Yêu cầu: Đá Phạt + Nhãn Quan (Free Kick + Vision)',
+        successChance: (p) => {
+          const fk = getSubStat(p, 'freeKick', 'pas');
+          const vis = getSubStat(p, 'vision', 'pas');
+          return Math.min(0.86, (fk * 0.005) + (vis * 0.004) + ((p.attr2 || 70) * 0.001));
+        },
         successText: 'QUÁ TINH QUÁI! Cú sút chìm qua chân hàng rào khiến thủ môn hoàn toàn đứng chôn chân!',
         failureText: 'Cú sút bị hậu vệ kịp thời khép góc chặn lại.',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.morale = 100; },
@@ -1204,8 +1220,12 @@ export const FW_MF_MOMENT_BANK = [
     ballPitchPercent: 65,
     choices: [
       { text: 'Chọc khe xẻ nách hàng thủ mở toang cơ hội ghi bàn',
-        statHint: 'Yêu cầu: Nhãn Quan + Kiểm Soát',
-        successChance: (p) => Math.min(0.88, (p.attr3 * 0.006) + (p.attr4 * 0.004)),
+        statHint: 'Yêu cầu: Nhãn Quan + Chuyền Ngắn (Vision + Short Passing)',
+        successChance: (p) => {
+          const vis = getSubStat(p, 'vision', 'pas');
+          const sp = getSubStat(p, 'shortPassing', 'pas');
+          return Math.min(0.90, (vis * 0.005) + (sp * 0.004) + ((p.attr4 || 70) * 0.001));
+        },
         successText: 'NHẠC TRƯỞNG BẬC THẦY! Đường chuyền dọn cỗ không thể chối từ để đồng đội lập công!',
         failureText: 'Đường chuyền bị đối phương bắt bài phản công.',
         onSuccess: (p, r) => { r.assists += 1; p.totalCareerAssists = (p.totalCareerAssists || 0) + 1; },
@@ -1220,8 +1240,12 @@ export const FW_MF_MOMENT_BANK = [
     ballPitchPercent: 90,
     choices: [
       { text: 'Sút Panenka điệu nghệ phong cách GOAT',
-        statHint: 'Yêu cầu: Bản Lĩnh (Fame) + Tinh Thần',
-        successChance: (p) => Math.min(0.88, (p.morale * 0.006) + (p.fame * 0.003)),
+        statHint: 'Yêu cầu: Phạt Đền + Điềm Tĩnh Dưới Áp Lực (Penalties + Composure)',
+        successChance: (p) => {
+          const pen = getSubStat(p, 'penalties', 'sho');
+          const comp = getSubStat(p, 'composure', 'dri');
+          return Math.min(0.92, (pen * 0.005) + (comp * 0.004) + ((p.fame || 70) * 0.001));
+        },
         successText: 'PANENKA ĐẲNG CẤP VĨ ĐẠI! Trái bóng nhẹ nhàng bay vào lưới giữa tiếng hò reo vang dội!',
         failureText: 'Thủ môn đứng yên ôm gọn cú sút!',
         onSuccess: (p, r) => { 
@@ -1233,8 +1257,13 @@ export const FW_MF_MOMENT_BANK = [
         },
         onFailure: (p) => { p.morale = Math.max(30, p.morale - 15); p.form = Math.max(30, p.form - 10); } },
       { text: 'Sút căng hiểm hóc găm thẳng vào góc chữ A',
-        statHint: 'Yêu cầu: Dứt Điểm + Phong Độ',
-        successChance: (p) => Math.min(0.90, (p.attr1 * 0.007) + (p.form * 0.003)),
+        statHint: 'Yêu cầu: Phạt Đền + Lực Sút + Điềm Tĩnh (Penalties + Shot Power)',
+        successChance: (p) => {
+          const pen = getSubStat(p, 'penalties', 'sho');
+          const pow = getSubStat(p, 'shotPower', 'sho');
+          const comp = getSubStat(p, 'composure', 'dri');
+          return Math.min(0.93, (pen * 0.005) + (pow * 0.003) + (comp * 0.002));
+        },
         successText: 'BÀN THẮNG VÀNG! Cú sút không thể cản phá mang về chiến thắng lịch sử!',
         failureText: 'Trái bóng liếm mép cột dọc đi ra ngoài!',
         onSuccess: (p, r) => { 
@@ -1253,15 +1282,28 @@ export const FW_MF_MOMENT_BANK = [
     desc: 'Phá bẫy việt vị thành công! Bạn thoát xuống đối mặt trực tiếp với thủ môn!',
     ballPitchPercent: 88,
     choices: [
+      { text: 'Căn chỉnh góc dứt điểm chìm hiểm hóc đánh bại thủ môn',
+        statHint: 'Yêu cầu: Dứt Điểm + Điềm Tĩnh (Finishing + Composure)',
+        successChance: (p) => {
+          const fin = getSubStat(p, 'finishing', 'sho');
+          const comp = getSubStat(p, 'composure', 'dri');
+          return Math.min(0.92, (fin * 0.006) + (comp * 0.004));
+        },
+        successText: 'SÁT THỦ LẠNH LÙNG! Pha dứt điểm chìm hiểm hóc lạnh như băng đánh lừa thủ môn đưa bóng vào lưới!',
+        failureText: 'Thủ môn đối phương khép góc xuất sắc đẩy bóng ra!',
+        onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.form = Math.min(99, p.form + 8); p.fame = Math.min(99, p.fame + 5); },
+        onFailure: (p) => { p.morale = Math.max(35, p.morale - 8); } },
       { text: (p) => (p && p.skillMoves >= 6) ? '🪄 [Trickster+] Hất bóng cầu vồng Rabona đỉnh cao qua đầu thủ môn' : 'Đảo chân lừa qua thủ môn rồi đưa bóng vào lưới trống',
-        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ thành công & Giảm 50% rủi ro' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ)` : 'Yêu cầu: Rê Bóng + Tinh Thần'),
+        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ thành công & Giảm 50% rủi ro' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ)` : 'Yêu cầu: Rê Bóng + Điềm Tĩnh (Dribbling + Composure)'),
         isDribble: true,
         successChance: (p) => {
           const sm = p?.skillMoves || 3;
           const smBonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
-          return Math.min(0.95, (p.attr4 * 0.006) + (p.morale * 0.003) + smBonus);
+          const dri = getSubStat(p, 'dribbling', 'dri');
+          const comp = getSubStat(p, 'composure', 'dri');
+          return Math.min(0.95, (dri * 0.005) + (comp * 0.004) + smBonus);
         },
-        successText: (p) => (p && p.skillMoves >= 6) ? 'SIÊU PHẨM RABONA CẦU VỒNG! Cú vắt chân hất bóng cầu vồng không tưởng qua đầu thủ môn găm thẳng vào lưới trống!' : 'SÁT THỦ LẠNH LÙNG! Đảo bóng qua thủ môn rồi dễ dàng đệm vào lưới trống!',
+        successText: (p) => (p && p.skillMoves >= 6) ? 'SIÊU PHẨM RABONA CẦU VỒNG! Cú vắt chân hất bóng cầu vồng không tưởng qua đầu thủ môn găm thẳng vào lưới trống!' : 'VŨ ĐIỆU SÂN CỎ! Đảo bóng qua thủ môn rồi dễ dàng đệm vào lưới trống!',
         failureText: 'Thủ môn đối phương băng ra cực nhanh cản phá!',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.form = Math.min(99, p.form + 8); p.fame = Math.min(99, p.fame + 5); },
         onFailure: (p) => { p.morale = Math.max(35, p.morale - 8); } }
@@ -1278,12 +1320,14 @@ export const FW_MF_MOMENT_BANK = [
     choices: [
       {
         text: '🪄 Đảo chân Elastico kép xâu kim qua 2 hậu vệ xộc thẳng vào cấm địa',
-        statHint: 'Đặc quyền Trickster+ (6⭐): +25% Tỷ lệ đột phá & -50% rủi ro phạm lỗi',
+        statHint: 'Đặc quyền Trickster+ (6⭐): +25% Tỷ lệ đột phá [Rê Bóng + Khéo Léo]',
         isDribble: true,
         successChance: (p) => {
           const sm = p?.skillMoves || 3;
           const bonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
-          return Math.min(0.95, (p.attr4 * 0.007) + (p.stam * 0.002) + bonus);
+          const dri = getSubStat(p, 'dribbling', 'dri');
+          const agi = getSubStat(p, 'agility', 'dri');
+          return Math.min(0.95, (dri * 0.005) + (agi * 0.003) + ((p.stam || 70) * 0.001) + bonus);
         },
         successText: 'ẢO THUẬT GIA SÂN CỎ! Cú đảo chân Elastico kép biến 2 hậu vệ thành tượng gỗ, xâu kim điệu nghệ rồi dứt điểm sấm sét tung nóc lưới!',
         failureText: 'Động tác siêu khó khiến hàng thủ đối phương một phen hoảng sợ thót tim.',
@@ -1298,12 +1342,14 @@ export const FW_MF_MOMENT_BANK = [
       },
       {
         text: '🪄 Hất bóng cầu vồng Rabona đỉnh cao qua đầu thủ môn',
-        statHint: 'Kỹ thuật Rabona thượng thừa (6⭐): +25% Thành công',
+        statHint: 'Kỹ thuật Rabona thượng thừa (6⭐): +25% Thành công [Rê Bóng + Khéo Léo + Dứt Điểm]',
         isDribble: true,
         successChance: (p) => {
           const sm = p?.skillMoves || 3;
           const bonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
-          return Math.min(0.94, (p.attr4 * 0.006) + (p.attr1 * 0.003) + bonus);
+          const dri = getSubStat(p, 'dribbling', 'dri');
+          const fin = getSubStat(p, 'finishing', 'sho');
+          return Math.min(0.94, (dri * 0.005) + (fin * 0.003) + bonus);
         },
         successText: 'SIÊU PHẨM CẦU VỒNG RABONA! Cú hất chân chéo Rabona vẽ nên đường cong không tưởng qua đầu thủ môn găm vào lưới!',
         failureText: 'Pha vắt chân hơi sâu đưa bóng đi chệch khung thành trong gang tấc.',
@@ -1337,7 +1383,8 @@ export const FW_MF_MOMENT_BANK = [
           else if (wf === 4) penalty = -0.05;
           else if (wf === 3) penalty = -0.10;
           else penalty = -0.25;
-          return Math.max(0.35, Math.min(0.92, (p.attr1 * 0.007) + (p.form * 0.003) + penalty));
+          const fin = getSubStat(p, 'finishing', 'sho');
+          return Math.max(0.35, Math.min(0.92, (fin * 0.007) + ((p.form || 70) * 0.003) + penalty));
         },
         successText: 'HAI CHÂN NHƯ MỘT! Cú ra chân bằng chân nghịch sấm sét găm thẳng vào góc chữ A khiến thủ môn bó tay!',
         failureText: 'Cú sút bằng chân không thuận đi thiếu chính xác ra ngoài đường biên.',
@@ -1351,8 +1398,12 @@ export const FW_MF_MOMENT_BANK = [
       },
       {
         text: 'Khống chế gạt bóng về chân thuận rồi mới cứa lòng',
-        statHint: 'Yêu cầu: Kiểm Soát Bóng + Bình Tĩnh',
-        successChance: (p) => Math.min(0.86, (p.attr4 * 0.006) + (p.attr1 * 0.003)),
+        statHint: 'Yêu cầu: Khống Chế Bóng + Dứt Điểm (Ball Control + Finishing)',
+        successChance: (p) => {
+          const bc = getSubStat(p, 'ballControl', 'dri');
+          const fin = getSubStat(p, 'finishing', 'sho');
+          return Math.min(0.88, (bc * 0.005) + (fin * 0.004));
+        },
         successText: 'BÌNH TĨNH ĐẲNG CẤP! Pha sửa bóng về chân thuận hoàn hảo mở ra góc sút cứa lòng không thể cản phá!',
         failureText: 'Hậu vệ đối phương kịp thời ập vào can thiệp trước khi kịp vung chân thuận.',
         onSuccess: (p, r) => {
@@ -1372,8 +1423,14 @@ export const FW_MF_MOMENT_BANK = [
     ballPitchPercent: 82,
     choices: [
       { text: 'Bấm bóng thông minh cho đồng đội đánh đầu cận thành',
-        statHint: 'Yêu cầu: Nhãn Quan + Tinh Thần Thép',
-        successChance: (p) => Math.min(0.85, (p.attr3 * 0.006) + (p.morale * 0.004)),
+        statHint: 'Yêu cầu: Nhãn Quan + Chuyền Ngắn/Dài (Vision + Passing)',
+        successChance: (p) => {
+          const vis = getSubStat(p, 'vision', 'pas');
+          const sp = getSubStat(p, 'shortPassing', 'pas');
+          const lp = getSubStat(p, 'longPassing', 'pas');
+          const pass = Math.max(sp, lp);
+          return Math.min(0.92, (vis * 0.005) + (pass * 0.004) + ((p.morale || 70) * 0.001));
+        },
         successText: 'KIẾN TẠO VÀNG PHÚT BÙ GIỜ! Đường bấm bóng điệu nghệ giúp đồng đội ghi bàn định đoạt!',
         failureText: 'Bóng đi hơi sâu trôi hết đường biên ngang.',
         onSuccess: (p, r) => { 
@@ -1385,8 +1442,13 @@ export const FW_MF_MOMENT_BANK = [
         },
         onFailure: (p) => { p.morale = Math.max(30, p.morale - 10); p.form = Math.max(30, p.form - 8); } },
       { text: 'Sút xa bất ngờ găm bóng vào góc chữ A',
-        statHint: 'Yêu cầu: Dứt Điểm + Bản Lĩnh',
-        successChance: (p) => Math.min(0.82, (p.attr1 * 0.007) + (p.fame * 0.002)),
+        statHint: 'Yêu cầu: Sút Xa + Lực Sút + Điềm Tĩnh (Long Shots + Composure)',
+        successChance: (p) => {
+          const ls = getSubStat(p, 'longShots', 'sho');
+          const pow = getSubStat(p, 'shotPower', 'sho');
+          const comp = getSubStat(p, 'composure', 'dri');
+          return Math.min(0.90, (ls * 0.004) + (pow * 0.003) + (comp * 0.002) + ((p.fame || 70) * 0.001));
+        },
         successText: 'SIÊU PHẨM ĐỊNH ĐOẠT TRẬN ĐẤU! Bàn thắng vàng phút 90+3 làm nổ tung cầu trường!',
         failureText: 'Cú sút bay vọt xà ngang!',
         onSuccess: (p, r) => { 

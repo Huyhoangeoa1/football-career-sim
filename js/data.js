@@ -178,6 +178,241 @@ export const FIFA_STATS = [
   { key: 'phy', name: 'Thể Chất / Tì Đè', code: 'PHY', icon: '💪', label: '💪 Thể Chất / Tì Đè (PHY)' }
 ];
 
+/* =========================================================================
+   29 CHỈ SỐ PHỤ CHUYÊN SÂU THEO CHUẨN EA SPORTS FC (DETAILED ATTRIBUTES)
+   ========================================================================= */
+export const SUB_STATS_CONFIG = {
+  pac: {
+    key: 'pac',
+    name: 'Tốc Độ',
+    code: 'PAC',
+    icon: '⚡',
+    label: '⚡ Tốc Độ (PAC)',
+    stats: [
+      { key: 'acceleration', nameVi: 'Gia Tốc', nameEn: 'Acceleration', abbr: 'ACC' },
+      { key: 'sprintSpeed', nameVi: 'Tốc Độ Nước Rút', nameEn: 'Sprint Speed', abbr: 'SPD' }
+    ]
+  },
+  sho: {
+    key: 'sho',
+    name: 'Dứt Điểm / Sút',
+    code: 'SHO',
+    icon: '🎯',
+    label: '🎯 Dứt Điểm / Sút (SHO)',
+    stats: [
+      { key: 'positioning', nameVi: 'Chọn Vị Trí Tấn Công', nameEn: 'Att. Positioning', abbr: 'POS' },
+      { key: 'finishing', nameVi: 'Dứt Điểm Vòng Cấm', nameEn: 'Finishing', abbr: 'FIN' },
+      { key: 'shotPower', nameVi: 'Lực Sút', nameEn: 'Shot Power', abbr: 'POW' },
+      { key: 'longShots', nameVi: 'Sút Xa', nameEn: 'Long Shots', abbr: 'L.SHO' },
+      { key: 'volleys', nameVi: 'Vô-lê Bắt Bóng Sống', nameEn: 'Volleys', abbr: 'VOL' },
+      { key: 'penalties', nameVi: 'Đá Phạt Đền', nameEn: 'Penalties', abbr: 'PEN' }
+    ]
+  },
+  pas: {
+    key: 'pas',
+    name: 'Chuyền Bóng',
+    code: 'PAS',
+    icon: '👟',
+    label: '👟 Chuyền Bóng (PAS)',
+    stats: [
+      { key: 'vision', nameVi: 'Tầm Nhìn Nhãn Quan', nameEn: 'Vision', abbr: 'VIS' },
+      { key: 'crossing', nameVi: 'Tạt Bóng Điểm Rơi', nameEn: 'Crossing', abbr: 'CRO' },
+      { key: 'freeKick', nameVi: 'Sút Phạt Trực Tiếp', nameEn: 'FK Accuracy', abbr: 'FK' },
+      { key: 'shortPassing', nameVi: 'Chuyền Ngắn', nameEn: 'Short Passing', abbr: 'S.PAS' },
+      { key: 'longPassing', nameVi: 'Chuyền Dài Vượt Tuyến', nameEn: 'Long Passing', abbr: 'L.PAS' },
+      { key: 'curve', nameVi: 'Độ Xoáy Quỹ Đạo', nameEn: 'Curve', abbr: 'CRV' }
+    ]
+  },
+  dri: {
+    key: 'dri',
+    name: 'Rê Bóng / Xử Lý',
+    code: 'DRI',
+    icon: '🪄',
+    label: '🪄 Rê Bóng / Xử Lý (DRI)',
+    stats: [
+      { key: 'agility', nameVi: 'Khéo Léo Linh Hoạt', nameEn: 'Agility', abbr: 'AGI' },
+      { key: 'balance', nameVi: 'Thăng Bằng', nameEn: 'Balance', abbr: 'BAL' },
+      { key: 'reactions', nameVi: 'Phản Ứng Tình Huống', nameEn: 'Reactions', abbr: 'REA' },
+      { key: 'ballControl', nameVi: 'Bước Một / Khống Chế Bóng', nameEn: 'Ball Control', abbr: 'CTRL' },
+      { key: 'dribbling', nameVi: 'Rê Bóng Cận Chân', nameEn: 'Dribbling', abbr: 'DRI' },
+      { key: 'composure', nameVi: 'Điềm Tĩnh Dưới Áp Lực', nameEn: 'Composure', abbr: 'CMP' }
+    ]
+  },
+  def: {
+    key: 'def',
+    name: 'Phòng Ngự',
+    code: 'DEF',
+    icon: '🛡️',
+    label: '🛡️ Phòng Ngự (DEF)',
+    stats: [
+      { key: 'interceptions', nameVi: 'Cắt Đường Chuyền', nameEn: 'Interceptions', abbr: 'INT' },
+      { key: 'headingAccuracy', nameVi: 'Đánh Đầu', nameEn: 'Heading Accuracy', abbr: 'HEA' },
+      { key: 'defAwareness', nameVi: 'Nhận Thức Phòng Ngự', nameEn: 'Def. Awareness', abbr: 'AWA' },
+      { key: 'standingTackle', nameVi: 'Tắc Bóng Trực Diện', nameEn: 'Standing Tackle', abbr: 'STD.T' },
+      { key: 'slidingTackle', nameVi: 'Xoạc Bóng', nameEn: 'Sliding Tackle', abbr: 'SLD.T' }
+    ]
+  },
+  phy: {
+    key: 'phy',
+    name: 'Thể Chất / Tì Đè',
+    code: 'PHY',
+    icon: '💪',
+    label: '💪 Thể Chất / Tì Đè (PHY)',
+    stats: [
+      { key: 'jumping', nameVi: 'Bật Nhảy', nameEn: 'Jumping', abbr: 'JMP' },
+      { key: 'staminaAttr', nameVi: 'Sức Bền Trận Đấu', nameEn: 'Stamina', abbr: 'STA' },
+      { key: 'strength', nameVi: 'Sức Mạnh Tranh Chấp', nameEn: 'Strength', abbr: 'STR' },
+      { key: 'aggression', nameVi: 'Quyết Đoán / Tinh Thần Chiến Đấu', nameEn: 'Aggression', abbr: 'AGG' }
+    ]
+  }
+};
+
+/**
+ * Sinh danh sách 29 chỉ số con (subStats) dựa trên 6 chỉ số mặt thẻ Face Stats hiện có
+ * @param {object} faceStats { pac, sho, pas, dri, def, phy }
+ * @param {string} position Vị trí thi đấu ('ST', 'CAM', 'CB', 'GK', ...)
+ * @returns {object} Map 29 chỉ số con từ 1 đến 99
+ */
+export function generateSubStatsFromFaceStats(faceStats = {}, position = 'ST') {
+  const result = {};
+  const posUpper = String(position || 'ST').toUpperCase();
+
+  const posOffsets = {
+    acceleration: ['LW', 'RW', 'ST', 'LM', 'RM'].includes(posUpper) ? 2 : 0,
+    sprintSpeed: ['LW', 'RW', 'ST', 'LM', 'RM'].includes(posUpper) ? 1 : -1,
+    positioning: ['ST', 'CF', 'CAM'].includes(posUpper) ? 2 : 0,
+    finishing: ['ST', 'CF'].includes(posUpper) ? 3 : (['LW', 'RW'].includes(posUpper) ? 1 : -2),
+    shotPower: ['ST', 'CB'].includes(posUpper) ? 1 : 0,
+    longShots: ['CAM', 'CM'].includes(posUpper) ? 3 : -1,
+    volleys: ['ST'].includes(posUpper) ? 1 : -1,
+    penalties: ['ST'].includes(posUpper) ? 1 : 0,
+    vision: ['CAM', 'CM'].includes(posUpper) ? 3 : -1,
+    crossing: ['LW', 'RW', 'LB', 'RB', 'LM', 'RM'].includes(posUpper) ? 3 : -2,
+    freeKick: ['CAM', 'CM'].includes(posUpper) ? 2 : -1,
+    shortPassing: ['CM', 'CAM', 'CDM'].includes(posUpper) ? 2 : 0,
+    longPassing: ['CM', 'CDM', 'CB'].includes(posUpper) ? 2 : -1,
+    curve: ['LW', 'RW', 'CAM'].includes(posUpper) ? 2 : 0,
+    agility: ['LW', 'RW', 'CAM'].includes(posUpper) ? 2 : (['CB'].includes(posUpper) ? -2 : 0),
+    balance: ['LW', 'RW'].includes(posUpper) ? 2 : 0,
+    reactions: 1,
+    ballControl: ['CAM', 'ST', 'CM', 'LW', 'RW'].includes(posUpper) ? 2 : 0,
+    dribbling: ['LW', 'RW', 'CAM', 'ST'].includes(posUpper) ? 2 : -1,
+    composure: ['ST', 'CAM'].includes(posUpper) ? 2 : 0,
+    interceptions: ['CDM', 'CB', 'LB', 'RB'].includes(posUpper) ? 3 : -3,
+    headingAccuracy: ['CB', 'ST'].includes(posUpper) ? 3 : -1,
+    defAwareness: ['CB', 'LB', 'RB', 'CDM'].includes(posUpper) ? 3 : -3,
+    standingTackle: ['CB', 'LB', 'RB', 'CDM'].includes(posUpper) ? 3 : -3,
+    slidingTackle: ['CB', 'LB', 'RB'].includes(posUpper) ? 2 : -4,
+    jumping: ['CB', 'ST'].includes(posUpper) ? 2 : 0,
+    staminaAttr: ['CM', 'CDM', 'LB', 'RB'].includes(posUpper) ? 3 : 0,
+    strength: ['CB', 'ST', 'CDM'].includes(posUpper) ? 3 : -2,
+    aggression: ['CB', 'CDM'].includes(posUpper) ? 3 : -1
+  };
+
+  for (const [groupKey, groupConf] of Object.entries(SUB_STATS_CONFIG)) {
+    const baseFace = Math.round(Number(faceStats[groupKey]) || 55);
+    const statsList = groupConf.stats;
+    let initialValues = statsList.map(s => {
+      const offset = posOffsets[s.key] !== undefined ? posOffsets[s.key] : 0;
+      return Math.max(1, Math.min(99, baseFace + offset));
+    });
+
+    const currentSum = initialValues.reduce((a, b) => a + b, 0);
+    const targetSum = baseFace * statsList.length;
+    let diff = targetSum - currentSum;
+
+    let idx = 0;
+    while (diff !== 0 && idx < 100) {
+      const i = idx % statsList.length;
+      if (diff > 0 && initialValues[i] < 99) {
+        initialValues[i]++;
+        diff--;
+      } else if (diff < 0 && initialValues[i] > 1) {
+        initialValues[i]--;
+        diff++;
+      }
+      idx++;
+    }
+
+    statsList.forEach((s, i) => {
+      result[s.key] = initialValues[i];
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Lấy giá trị của một chỉ số con cụ thể (với cơ chế fallback an toàn)
+ * @param {object} player 
+ * @param {string} subKey Key của chỉ số con ('finishing', 'vision', 'composure', ...)
+ * @param {string} fallbackFace Key chỉ số mặt thẻ thay thế nếu chưa có ('sho', 'pas', ...)
+ * @returns {number} Giá trị chỉ số (1 - 99)
+ */
+export function getSubStat(player, subKey, fallbackFace = 'sho') {
+  if (player?.subStats && player.subStats[subKey] !== undefined) {
+    return Number(player.subStats[subKey]);
+  }
+  if (player?.stats && player.stats[fallbackFace] !== undefined) {
+    return Number(player.stats[fallbackFace]);
+  }
+  return Number(player?.[fallbackFace] || player?.attr1 || 60);
+}
+
+/**
+ * Đồng bộ hai chiều: Cập nhật chỉ số mặt thẻ Face Stat từ trung bình cộng các chỉ số con
+ * @param {object} player 
+ */
+export function syncFaceStatsFromSubStats(player) {
+  if (!player || !player.subStats) return;
+  if (!player.stats) player.stats = {};
+
+  for (const [groupKey, groupConf] of Object.entries(SUB_STATS_CONFIG)) {
+    const sum = groupConf.stats.reduce((acc, s) => acc + (Number(player.subStats[s.key]) || 50), 0);
+    const avg = Math.round(sum / groupConf.stats.length);
+    const clampedAvg = Math.max(1, Math.min(99, avg));
+    player.stats[groupKey] = clampedAvg;
+
+    const capKey = groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
+    player[`stat${capKey}`] = clampedAvg;
+  }
+}
+
+/**
+ * Đồng bộ hai chiều: Khi chỉ số mặt thẻ thay đổi, phân bổ bù trừ trực tiếp vào các chỉ số con
+ * @param {object} player 
+ * @param {string|null} groupKey Chỉ định group cần đồng bộ ('pac', 'sho'...) hoặc null cho toàn bộ
+ */
+export function syncSubStatsFromFaceStats(player, groupKey = null) {
+  if (!player || !player.subStats) return;
+  if (!player.stats) player.stats = {};
+  const groupsToSync = groupKey ? [groupKey] : Object.keys(SUB_STATS_CONFIG);
+
+  groupsToSync.forEach(gKey => {
+    const groupConf = SUB_STATS_CONFIG[gKey];
+    if (!groupConf) return;
+    const capKey = gKey.charAt(0).toUpperCase() + gKey.slice(1);
+    const targetFace = Math.round(
+      player.stats[gKey] !== undefined 
+        ? player.stats[gKey] 
+        : (player[`stat${capKey}`] !== undefined ? player[`stat${capKey}`] : 55)
+    );
+    player.stats[gKey] = targetFace;
+    player[`stat${capKey}`] = targetFace;
+
+    const sum = groupConf.stats.reduce((acc, s) => acc + (Number(player.subStats[s.key]) || 50), 0);
+    const curAvg = Math.round(sum / groupConf.stats.length);
+    const diff = targetFace - curAvg;
+
+    if (diff !== 0) {
+      groupConf.stats.forEach(s => {
+        const curVal = Number(player.subStats[s.key]) || 50;
+        player.subStats[s.key] = Math.max(1, Math.min(99, curVal + diff));
+      });
+    }
+  });
+}
+
 export const POSITION_CONFIG = {
   // 1. THỦ MÔN
   GK: {
@@ -3183,8 +3418,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'PENALTY_POWER',
         text: '🎯 Sút găm góc hiểm quyết đoán',
-        statHint: 'Dựa vào Chỉ số Dứt điểm / Bàn thắng kỳ vọng cao',
-        statKey: 'attr1',
+        statHint: 'Dựa vào Chỉ số Dứt điểm & Phạt đền / Bàn thắng kỳ vọng cao',
+        statKey: 'penalties',
         xG: 0.85,
         baseSuccessChance: 0.84,
         successType: 'GOAL',
@@ -3194,8 +3429,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'PENALTY_PANENKA',
         text: '🎩 Cú sút Panenka đánh lừa thủ môn',
-        statHint: 'Dựa vào Kỹ thuật / Rủi ro cao nhưng tăng mạnh Danh tiếng và Rating',
-        statKey: 'attr4',
+        statHint: 'Dựa vào Điềm tĩnh & Kỹ thuật / Rủi ro cao nhưng tăng mạnh Danh tiếng và Rating',
+        statKey: 'composure',
         xG: 0.75,
         baseSuccessChance: 0.72,
         successType: 'GOAL',
@@ -3217,8 +3452,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'FREE_KICK_CURL',
         text: '🎯 Cứa lòng qua hàng rào vào góc chết',
-        statHint: 'Dựa vào Kỹ thuật / Sút xa',
-        statKey: 'attr4',
+        statHint: 'Dựa vào Sút phạt trực tiếp (Free Kick) & Độ xoáy',
+        statKey: 'freeKick',
         xG: 0.45,
         baseSuccessChance: 0.74,
         successType: 'GOAL',
@@ -3228,8 +3463,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'FREE_KICK_CROSS',
         text: '👟 Treo bóng điểm rơi vào cột xa cho đồng đội đánh đầu',
-        statHint: 'Dựa vào Chuyền bóng / Nhận Kiến tạo',
-        statKey: 'attr2',
+        statHint: 'Dựa vào Tạt bóng điểm rơi (Crossing) & Chuyền bóng',
+        statKey: 'crossing',
         xG: 0.50,
         baseSuccessChance: 0.80,
         successType: 'ASSIST',
@@ -3249,8 +3484,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'CORNER_INSWING',
         text: '🌀 Tạt xoáy cuộn vào cột gần tạo hỗn loạn',
-        statHint: 'Cơ hội tạo kiến tạo',
-        statKey: 'attr2',
+        statHint: 'Tạt bóng điểm rơi (Crossing) tạo cơ hội kiến tạo',
+        statKey: 'crossing',
         xG: 0.40,
         baseSuccessChance: 0.78,
         successType: 'ASSIST',
@@ -3260,8 +3495,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'CORNER_SHORT',
         text: '🤝 Phối hợp phạt góc ngắn kéo giãn hàng thủ đối phương',
-        statHint: 'Phối hợp phạt góc ngắn kéo giãn hàng thủ đối phương',
-        statKey: 'attr2',
+        statHint: 'Chuyền ngắn (Short Passing) phối hợp kéo giãn hàng thủ',
+        statKey: 'shortPassing',
         xG: 0.35,
         baseSuccessChance: 0.85,
         successType: 'ASSIST',
@@ -3281,8 +3516,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'DRIBBLE_SKILL_MOVE',
         text: '🪄 Vung chân biểu diễn kỹ thuật vượt qua hậu vệ',
-        statHint: 'Dựa vào Kỹ Thuật (Skill Moves) & Rê bóng',
-        statKey: 'attr4',
+        statHint: 'Dựa vào Kỹ Thuật (Skill Moves) & Rê bóng (Dribbling)',
+        statKey: 'dribbling',
         xG: 0.65,
         baseSuccessChance: 0.70,
         successType: 'GOAL',
@@ -3295,8 +3530,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'DRIBBLE_PASS_COMBINE',
         text: '🎯 Đập nhả một chạm với đồng đội rồi thoát xuống',
-        statHint: 'Dựa vào Chuyền bóng & Nhãn quan',
-        statKey: 'attr2',
+        statHint: 'Dựa vào Chuyền ngắn (Short Passing) & Nhãn quan',
+        statKey: 'shortPassing',
         xG: 0.50,
         baseSuccessChance: 0.80,
         successType: 'ASSIST',
@@ -3316,8 +3551,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'WEAK_FOOT_SHOT',
         text: '👟 Vung chân dứt điểm ngay bằng chân không thuận',
-        statHint: 'Tác động trực tiếp bởi Chỉ số Chân Nghịch (Weak Foot)',
-        statKey: 'attr1',
+        statHint: 'Tác động bởi Dứt điểm (Finishing) & Chân Nghịch (Weak Foot)',
+        statKey: 'finishing',
         isWeakFoot: true,
         xG: 0.60,
         baseSuccessChance: 0.75,
@@ -3330,8 +3565,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'WEAK_FOOT_OUTSIDE_CURL',
         text: '🪄 Vẩy má ngoài chân thuận (Trivela) vào góc xa',
-        statHint: 'Yêu cầu Kỹ thuật xử lý má ngoài điệu nghệ',
-        statKey: 'attr4',
+        statHint: 'Yêu cầu Độ xoáy (Curve) & Kỹ thuật má ngoài điệu nghệ',
+        statKey: 'curve',
         xG: 0.55,
         baseSuccessChance: 0.72,
         successType: 'GOAL',
@@ -3357,8 +3592,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'CORNER_HEADER_CLEAR',
         text: '✈️ Bật cao đánh đầu phá bóng dứt khoát giải nguy',
-        statHint: 'Dựa vào Phòng ngự / Thể lực, tăng Rating và Điểm can thiệp',
-        statKey: 'attr1',
+        statHint: 'Dựa vào Đánh đầu (Heading) & Bật nhảy, tăng Rating',
+        statKey: 'headingAccuracy',
         xG: 0.45,
         baseSuccessChance: 0.82,
         successType: 'TACKLE',
@@ -3369,8 +3604,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'CORNER_FARPOST_COVER',
         text: '🧱 Bọc lót cột hai ngăn đối thủ đệm bóng cận thành',
-        statHint: 'Bọc lót cột hai ngăn đối thủ đệm bóng cận thành',
-        statKey: 'attr2',
+        statHint: 'Dựa vào Nhận thức phòng ngự (Def Awareness)',
+        statKey: 'defAwareness',
         xG: 0.40,
         baseSuccessChance: 0.85,
         successType: 'TACKLE',
@@ -3391,8 +3626,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'TACTICAL_SLIDE',
         text: '⚔️ Xoạc bóng quyết liệt chặn đợt phản công nhanh',
-        statHint: 'Tỷ lệ 70% cản phá thành công nhưng 30% dính thẻ vàng',
-        statKey: 'attr1',
+        statHint: 'Dựa vào Xoạc bóng (Sliding Tackle) / 70% cản phá, 30% dính thẻ',
+        statKey: 'slidingTackle',
         xG: 0.50,
         baseSuccessChance: 0.70,
         cardRisk: 0.30,
@@ -3403,8 +3638,8 @@ export const MATCH_EVENT_TEMPLATES = [
       {
         id: 'TACTICAL_CONTAIN',
         text: '🚶 Kèm người thụ động, giữ cự ly an toàn tránh phạm lỗi',
-        statHint: 'Kèm người thụ động, giữ cự ly an toàn tránh phạm lỗi',
-        statKey: 'attr3',
+        statHint: 'Dựa vào Nhận thức phòng ngự (Def Awareness), an toàn không thẻ',
+        statKey: 'defAwareness',
         xG: 0.40,
         baseSuccessChance: 0.75,
         cardRisk: 0.0,

@@ -2,7 +2,7 @@
    UI PLAYER — PLAYER CARD, BUFFS, RIVALRY, TROPHY SHOWCASE & CARD MODALS
    Extracted from ui.js
    ========================================================================= */
-import { LIFESTYLE_CATALOG, SIGNATURE_TRAITS } from './data.js';
+import { LIFESTYLE_CATALOG, SIGNATURE_TRAITS, SUB_STATS_CONFIG } from './data.js';
 import { CARD_AVATARS, getAvatarById } from './cardAvatars.js';
 import { CARD_THEMES, getThemeById, checkThemeUnlocked } from './cardThemes.js';
 import { getPlayer } from './state.js';
@@ -768,6 +768,133 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
       if (typeof onUpdate === 'function') onUpdate(player);
     };
   }
+}
+
+/* =========================================================================
+   HỆ THỐNG 29 CHỈ SỐ PHỤ CHUYÊN SÂU (EA FC DETAILED ATTRIBUTES ACCORDION)
+   ========================================================================= */
+
+let _isSubStatsAccordionInit = false;
+
+export function renderDetailedSubStats(player = getPlayer()) {
+  if (!player || !player.subStats) return;
+
+  const statGroups = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'];
+
+  statGroups.forEach(groupKey => {
+    const panel = document.getElementById(`panelSubStats_${groupKey}`);
+    if (!panel) return;
+
+    const groupConf = SUB_STATS_CONFIG ? SUB_STATS_CONFIG[groupKey] : null;
+    if (!groupConf) return;
+
+    let html = '<div class="substats-grid-inner">';
+    groupConf.stats.forEach(s => {
+      const val = Math.max(1, Math.min(99, Math.round(Number(player.subStats[s.key]) || 50)));
+
+      let badgeClass = 'score-red';
+      let fillClass = 'fill-red';
+      if (val >= 90) {
+        badgeClass = 'score-gold';
+        fillClass = 'fill-gold';
+      } else if (val >= 80) {
+        badgeClass = 'score-green';
+        fillClass = 'fill-green';
+      } else if (val >= 70) {
+        badgeClass = 'score-blue';
+        fillClass = 'fill-blue';
+      } else if (val >= 60) {
+        badgeClass = 'score-orange';
+        fillClass = 'fill-orange';
+      }
+
+      html += `
+        <div class="substat-card-item">
+          <div class="substat-card-row">
+            <span class="substat-label-vi">
+              ${s.nameVi} <span class="substat-label-en">(${s.nameEn})</span>
+            </span>
+            <span class="substat-score ${badgeClass}">${val}</span>
+          </div>
+          <div class="substat-bar-mini-bg">
+            <div class="substat-bar-mini-fill ${fillClass}" style="width: ${val}%;"></div>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+
+    panel.innerHTML = html;
+  });
+
+  initSubStatsAccordionListeners();
+}
+
+export function initSubStatsAccordionListeners() {
+  if (_isSubStatsAccordionInit) return;
+  _isSubStatsAccordionInit = true;
+
+  const statGroups = [
+    { key: 'pac', rowId: 'rowStatPac', arrowId: 'arrowStatPac', panelId: 'panelSubStats_pac' },
+    { key: 'sho', rowId: 'rowStatSho', arrowId: 'arrowStatSho', panelId: 'panelSubStats_sho' },
+    { key: 'pas', rowId: 'rowStatPas', arrowId: 'arrowStatPas', panelId: 'panelSubStats_pas' },
+    { key: 'dri', rowId: 'rowStatDri', arrowId: 'arrowStatDri', panelId: 'panelSubStats_dri' },
+    { key: 'def', rowId: 'rowStatDef', arrowId: 'arrowStatDef', panelId: 'panelSubStats_def' },
+    { key: 'phy', rowId: 'rowStatPhy', arrowId: 'arrowStatPhy', panelId: 'panelSubStats_phy' }
+  ];
+
+  statGroups.forEach(g => {
+    const rowEl = document.getElementById(g.rowId);
+    if (!rowEl) return;
+
+    rowEl.onclick = (e) => {
+      e.stopPropagation();
+      const panel = document.getElementById(g.panelId);
+      const arrow = document.getElementById(g.arrowId);
+      if (!panel) return;
+
+      const isHidden = (panel.style.display === 'none') || (!panel.style.display && window.getComputedStyle(panel).display === 'none');
+      panel.style.display = isHidden ? 'block' : 'none';
+      if (arrow) {
+        arrow.innerText = isHidden ? '▲' : '▼';
+        arrow.classList.toggle('arrow-up', isHidden);
+      }
+      _updateMasterToggleButtonLabel();
+    };
+  });
+
+  const masterBtn = document.getElementById('btnToggleAllSubStats');
+  if (masterBtn) {
+    masterBtn.onclick = () => {
+      const anyClosed = statGroups.some(g => {
+        const p = document.getElementById(g.panelId);
+        return !p || (p.style.display === 'none') || (!p.style.display && window.getComputedStyle(p).display === 'none');
+      });
+
+      statGroups.forEach(g => {
+        const panel = document.getElementById(g.panelId);
+        const arrow = document.getElementById(g.arrowId);
+        if (panel) panel.style.display = anyClosed ? 'block' : 'none';
+        if (arrow) {
+          arrow.innerText = anyClosed ? '▲' : '▼';
+          arrow.classList.toggle('arrow-up', anyClosed);
+        }
+      });
+
+      masterBtn.innerText = anyClosed ? '▲ Thu Gọn 29 Chỉ Số' : '🔍 Xem Chi Tiết 29 Chỉ Số';
+    };
+  }
+}
+
+function _updateMasterToggleButtonLabel() {
+  const masterBtn = document.getElementById('btnToggleAllSubStats');
+  if (!masterBtn) return;
+  const statGroups = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'];
+  const allOpen = statGroups.every(k => {
+    const p = document.getElementById(`panelSubStats_${k}`);
+    return p && p.style.display === 'block';
+  });
+  masterBtn.innerText = allOpen ? '▲ Thu Gọn 29 Chỉ Số' : '🔍 Xem Chi Tiết 29 Chỉ Số';
 }
 
 

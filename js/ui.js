@@ -49,7 +49,9 @@ export {
   openCardThemeModal,
   openCardAvatarModal,
   exportFcsCardPng,
-  copyCareerSummaryText
+  copyCareerSummaryText,
+  renderDetailedSubStats,
+  initSubStatsAccordionListeners
 } from './uiPlayer.js';
 
 // ── Signature Traits, Golden Shoe & Ballon D'Or Trackers ─────────────────

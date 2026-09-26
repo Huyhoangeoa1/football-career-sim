@@ -8,7 +8,7 @@ import {
 } from './engine.js';
 import { ensurePlayerStats, getFameTier } from './playerEngine.js';
 import { formatCurrency, formatMoney, formatSalary, getEuroBadgeText } from './uiCore.js';
-import { renderActiveBuffsBar, renderRivalWidget, renderTrophyShowcase, renderFcsUltimateCard, renderPlayerTraits } from './uiPlayer.js';
+import { renderActiveBuffsBar, renderRivalWidget, renderTrophyShowcase, renderFcsUltimateCard, renderPlayerTraits, renderDetailedSubStats } from './uiPlayer.js';
 import { renderLiveIndividualTracker, renderSignatureTraits } from './uiStats.js';
 import { renderRecordsTab } from './uiRecords.js';
 import { renderCompetitionTierWidget } from './uiCompetition.js';
@@ -190,6 +190,9 @@ export function updateUI(player) {
     if (barEl) barEl.style.width = `${Math.min(100, Math.max(5, val))}%`;
     if (lblEl) lblEl.innerText = item.lbl;
   });
+
+  // Render danh sách 29 chỉ số con chuyên sâu theo chuẩn EA FC
+  renderDetailedSubStats(player);
 
   const stamVal = Math.max(5, Math.min(100, Math.round(player.stam !== undefined ? player.stam : (player.stamina !== undefined ? player.stamina : 80))));
   const valStam = document.getElementById('valStam');

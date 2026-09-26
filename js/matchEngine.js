@@ -370,9 +370,13 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
       desc: tpl.desc,
       // 3. Truyền thẳng các tùy chọn (options/choices) của template vào giao diện Match Arena
       choices: tpl.choices.map(c => {
-        const statVal = (c.statKey && player[c.statKey] !== undefined) 
-          ? player[c.statKey] 
-          : (player.attr1 || 60);
+        const statVal = (c.statKey && player.subStats && player.subStats[c.statKey] !== undefined)
+          ? player.subStats[c.statKey]
+          : ((c.statKey && player.stats && player.stats[c.statKey] !== undefined)
+            ? player.stats[c.statKey]
+            : ((c.statKey && player[c.statKey] !== undefined)
+              ? player[c.statKey]
+              : (player.attr1 || 60)));
         const baseChance = c.baseSuccessChance || 0.75;
         const statBonus = ((statVal - 50) / 100) * 0.35;
         const videoBonus = (player.preMatchPrep === 'VIDEO_ANALYSIS' || player._tacticalPrepBonus) ? 0.05 : 0;

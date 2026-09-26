@@ -2,7 +2,13 @@
    FOOTBALL CAREER SIMULATOR — SAVE / LOAD MODULE (localStorage)
    ========================================================================= */
 
-import { REAL_RIVAL_SCORERS, YOUTH_LEAGUE_CLUBS } from './data.js';
+import { 
+  REAL_RIVAL_SCORERS, 
+  YOUTH_LEAGUE_CLUBS,
+  SUB_STATS_CONFIG,
+  generateSubStatsFromFaceStats,
+  getInitialStatsForPosition
+} from './data.js';
 
 const SAVE_KEY    = 'fcs_save_v1';
 const VERSION_KEY = 'fcs_version';
@@ -124,6 +130,56 @@ export function _migrate(data) {
   }
   if (data.skillMovesTrainProgress === undefined) {
     data.skillMovesTrainProgress = 0;
+  }
+
+  // Migration: Ensure 6 Face Stats exist
+  if (!data.stats || typeof data.stats !== 'object') {
+    const pos = data.position || 'ST';
+    data.stats = getInitialStatsForPosition ? getInitialStatsForPosition(pos) : {
+      pac: 55, sho: 55, pas: 55, dri: 55, def: 55, phy: 55
+    };
+    if (data.statPac !== undefined) data.stats.pac = Math.round(Number(data.statPac) || 55);
+    if (data.statSho !== undefined) data.stats.sho = Math.round(Number(data.statSho) || 55);
+    if (data.statPas !== undefined) data.stats.pas = Math.round(Number(data.statPas) || 55);
+    if (data.statDri !== undefined) data.stats.dri = Math.round(Number(data.statDri) || 55);
+    if (data.statDef !== undefined) data.stats.def = Math.round(Number(data.statDef) || 55);
+    if (data.statPhy !== undefined) data.stats.phy = Math.round(Number(data.statPhy) || 55);
+
+    if (data.attr1 !== undefined && data.statSho === undefined) {
+      const p = String(pos).toUpperCase();
+      if (['ST', 'CF', 'FW'].includes(p)) {
+        data.stats.sho = Math.round(Number(data.attr1) || 55);
+        data.stats.pac = Math.round(Number(data.attr2) || 58);
+        data.stats.pas = Math.round(Number(data.attr3) || 51);
+        data.stats.dri = Math.round(Number(data.attr4) || 56);
+      }
+    }
+  }
+
+  // Keep legacy statPac, statSho, etc. aligned with data.stats
+  if (data.stats) {
+    if (data.statPac === undefined || data.statPac === null) data.statPac = data.stats.pac;
+    if (data.statSho === undefined || data.statSho === null) data.statSho = data.stats.sho;
+    if (data.statPas === undefined || data.statPas === null) data.statPas = data.stats.pas;
+    if (data.statDri === undefined || data.statDri === null) data.statDri = data.stats.dri;
+    if (data.statDef === undefined || data.statDef === null) data.statDef = data.stats.def;
+    if (data.statPhy === undefined || data.statPhy === null) data.statPhy = data.stats.phy;
+  }
+
+  // Migration: Ensure 29 Detailed Sub-Attributes exist (EA FC Detailed Attributes)
+  if (!data.subStats || typeof data.subStats !== 'object') {
+    data.subStats = generateSubStatsFromFaceStats(data.stats, data.position);
+  } else {
+    for (const [groupKey, groupConf] of Object.entries(SUB_STATS_CONFIG)) {
+      const baseFace = Number(data.stats[groupKey]) || 55;
+      groupConf.stats.forEach(s => {
+        if (data.subStats[s.key] === undefined || data.subStats[s.key] === null || isNaN(Number(data.subStats[s.key]))) {
+          data.subStats[s.key] = Math.max(1, Math.min(99, Math.round(baseFace)));
+        } else {
+          data.subStats[s.key] = Math.max(1, Math.min(99, Math.round(Number(data.subStats[s.key]))));
+        }
+      });
+    }
   }
 
   // Ensure attributes are floats

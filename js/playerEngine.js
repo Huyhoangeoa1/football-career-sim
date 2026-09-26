@@ -11,8 +11,21 @@ import {
   getInitialStatsForPosition,
   SPONSORSHIP_CATEGORIES,
   SPONSORSHIP_BRANDS,
-  AGENTS_DATA
+  AGENTS_DATA,
+  SUB_STATS_CONFIG,
+  generateSubStatsFromFaceStats,
+  syncFaceStatsFromSubStats,
+  syncSubStatsFromFaceStats,
+  getSubStat
 } from './data.js';
+
+export {
+  SUB_STATS_CONFIG,
+  generateSubStatsFromFaceStats,
+  syncFaceStatsFromSubStats,
+  syncSubStatsFromFaceStats,
+  getSubStat
+};
 import { logCareerEvent } from './mediaEngine.js';
 
 /* =========================================================================
@@ -320,6 +333,22 @@ export function ensurePlayerStats(player) {
       player.stats[k] = parseFloat(Number(player.stats[k]).toFixed(2));
     }
   });
+
+  // Đảm bảo cấu trúc 29 chỉ số con (subStats) luôn đầy đủ và hợp lệ
+  if (!player.subStats || typeof player.subStats !== 'object') {
+    player.subStats = generateSubStatsFromFaceStats(player.stats, player.position);
+  } else {
+    for (const [groupKey, groupConf] of Object.entries(SUB_STATS_CONFIG)) {
+      const baseFace = Number(player.stats[groupKey]) || 55;
+      groupConf.stats.forEach(s => {
+        if (player.subStats[s.key] === undefined || player.subStats[s.key] === null || isNaN(Number(player.subStats[s.key]))) {
+          player.subStats[s.key] = Math.max(1, Math.min(99, Math.round(baseFace)));
+        } else {
+          player.subStats[s.key] = Math.max(1, Math.min(99, Math.round(Number(player.subStats[s.key]))));
+        }
+      });
+    }
+  }
 
   syncLegacyAttrs(player);
   return player.stats;
@@ -729,7 +758,8 @@ export function calculateDynamicGrowth(player, matchRating, stats = {}) {
     }
   }
 
-  // Đồng bộ sang attr1..4 và ovr
+  // Đồng bộ hai chiều sang subStats, attr1..4 và ovr
+  syncSubStatsFromFaceStats(player);
   syncLegacyAttrs(player);
   player.ovr = calculateOVR(player);
 
