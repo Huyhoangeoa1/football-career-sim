@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    UI DASHBOARD — DASHBOARD & TOP PROFILE SYNCHRONIZATION
    Extracted from ui.js
    ========================================================================= */
@@ -13,6 +13,7 @@ import { renderLiveIndividualTracker, renderSignatureTraits } from './uiStats.js
 import { renderRecordsTab } from './uiRecords.js';
 import { renderCompetitionTierWidget } from './uiCompetition.js';
 import { renderCareerChronicleTab } from './uiCareer.js';
+import { renderMediaFeedTab } from './uiMediaFeed.js';
 import { renderMatchdayHub } from './uiMatchday.js';
 /* =========================================================================
    3. DASHBOARD & TOP PROFILE SYNCHRONIZATION
@@ -308,6 +309,7 @@ export function updateUI(player) {
   renderSignatureTraits(player);
   renderCompetitionTierWidget(player);
   renderCareerChronicleTab(player);
+  renderMediaFeedTab(player);
   renderMatchdayHub(player);
 }
 

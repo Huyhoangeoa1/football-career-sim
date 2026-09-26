@@ -101,6 +101,12 @@ export {
   renderCareerChronicleTab
 } from './uiCareer.js';
 
+// ── Media & Fan Reaction Hub (Truyền Thông & Dư Luận) ────────────────────
+export {
+  filterMediaFeed,
+  renderMediaFeedTab
+} from './uiMediaFeed.js';
+
 // ── Multi-Tier Competitions & Club Prestige ───────────────────────────────
 export {
   renderCompetitionTierWidget

@@ -49,7 +49,13 @@ export {
   logCareerEvent,
   addCareerLog,
   recordChronicleMilestone,
-  updateCompetitionTier
+  updateCompetitionTier,
+  addMediaReaction,
+  ensurePlayerMediaFeed,
+  triggerMatchRatingMedia,
+  triggerMvpAwardMedia,
+  triggerTrophyWinMedia,
+  triggerBallonDorMedia
 } from './mediaEngine.js';
 
 // 4. Transfer Engine
@@ -149,7 +155,8 @@ import {
   generateRichMatchNarrative,
   logCareerEvent,
   recordChronicleMilestone,
-  getRandomAcademyLifeSnippet
+  getRandomAcademyLifeSnippet,
+  triggerMatchRatingMedia
 } from './mediaEngine.js';
 
 import {
@@ -929,6 +936,20 @@ export function simulateMatchdayRound(player, isQuickSim = false, interactiveRes
       isDerby: pMatch.isDerby,
       isBigMatch: pMatch.isBigMatch
     };
+  }
+
+  // Kích hoạt Dư Luận & Mạng Xã Hội (Media Feed) khi có màn trình diễn xuất thần
+  if (matchRating >= 9.0 || pGoals >= 3 || (pGoals >= 2 && pAssists >= 1) || (pCS > 0 && pSaves >= 6)) {
+    triggerMatchRatingMedia(player, {
+      rating: matchRating,
+      goals: pGoals,
+      assists: pAssists,
+      saves: pSaves,
+      tackles: pTackles,
+      cleanSheets: pCS,
+      stadium: pMatch?.stadium,
+      roundName: roundData?.stageName || roundData?.competitionName || `Vòng ${(curIdx || 0) + 1}`
+    });
   }
 
   // Lương theo tuần (1 tuần lương / vòng matchday)

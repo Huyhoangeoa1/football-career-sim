@@ -67,6 +67,7 @@ import {
   renderContractsTab,
   renderCareerChronicleTab,
   filterCareerChronicle,
+  renderMediaFeedTab,
   openMatchCenterModal,
   addLog,
   addFullSeasonStructuredLog,
@@ -516,6 +517,8 @@ export function switchTab(tabId) {
     renderContractsTab(player, signSponsorship, hireAgent);
   } else if (tabId === 'tabChronicle') {
     renderCareerChronicleTab(player);
+  } else if (tabId === 'tabMediaFeed') {
+    renderMediaFeedTab(player);
   }
 }
 

@@ -47,6 +47,9 @@ export function _migrate(data) {
   if (!data.achievedMilestones) {
     data.achievedMilestones = {};
   }
+  if (!data.mediaFeed || !Array.isArray(data.mediaFeed)) {
+    data.mediaFeed = [];
+  }
   if (!data.competitionTier) {
     data.competitionTier = {
       currentTier: data.isAcademyStage ? 3 : (data.currentClub?.league?.tierLevel === 4 ? 1 : 2),

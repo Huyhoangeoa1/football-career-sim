@@ -523,6 +523,22 @@ export function recordChronicleMilestone(player, milestoneId, customData = {}) {
       category: "matches",
       icon: "💪"
     },
+    MVP_AWARD: {
+      title: "Cầu Thủ Xuất Sắc Nhất Giải Đấu (MVP)",
+      desc: "Giành danh hiệu Cầu Thủ Xuất Sắc Nhất Giải Đấu (Tournament MVP / Player of the Season) danh giá!",
+      badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+      badgeColor: "gold",
+      category: "trophies",
+      icon: "🏅"
+    },
+    FIRST_CUP_TITLE: {
+      title: "Vô Địch Cúp Quốc Gia",
+      desc: "Nâng cao chiếc Cúp Quốc Gia danh giá sau trận chung kết nghẹt thở!",
+      badge: "🏆 VÔ ĐỊCH CÚP QUỐC GIA",
+      badgeColor: "gold",
+      category: "trophies",
+      icon: "🏆"
+    },
     TIER_PROMOTION: {
       title: "Thăng Hạng Lên Đấu Trường Đỉnh Cao",
       desc: "Đưa đội bóng vượt qua mùa giải kịch tính để chính thức bước lên đẳng cấp thi đấu cao hơn!",
@@ -537,7 +553,7 @@ export function recordChronicleMilestone(player, milestoneId, customData = {}) {
   if (!def) return null;
 
   // Với các mốc chỉ đạt 1 lần (First Goal, First Hattrick, Ballon d'Or...): kiểm tra xem đã từng đạt chưa
-  const isRepeatable = ['CLUTCH_MOMENT', 'MEGA_TRANSFER', 'OVERCAME_CRITICAL_INJURY'].includes(milestoneId);
+  const isRepeatable = ['CLUTCH_MOMENT', 'MEGA_TRANSFER', 'OVERCAME_CRITICAL_INJURY', 'MVP_AWARD', 'FIRST_CUP_TITLE'].includes(milestoneId);
   if (!isRepeatable && player.achievedMilestones[milestoneId]) {
     return null;
   }
@@ -565,6 +581,54 @@ export function recordChronicleMilestone(player, milestoneId, customData = {}) {
   };
 
   player.careerChronicleLog.unshift(entry);
+
+  // Kích hoạt phản ứng tương ứng vào Trung Tâm Dư Luận & Mạng Xã Hội (Media Feed)
+  try {
+    if (milestoneId === 'MVP_AWARD') {
+      triggerMvpAwardMedia(player, customData.title || def.title, customData.compName || "Giải Đấu", customData.stat || "");
+    } else if (milestoneId === 'FIRST_LEAGUE_TITLE' || milestoneId === 'FIRST_C1_TITLE' || milestoneId === 'FIRST_CUP_TITLE') {
+      triggerTrophyWinMedia(player, customData.title || def.title, customData.compName || "Giải Đấu");
+    } else if (milestoneId === 'BALLON_D_OR') {
+      triggerBallonDorMedia(player, 1);
+    } else if (milestoneId === 'CLUTCH_MOMENT') {
+      addMediaReaction(player, {
+        category: 'PRESS',
+        badge: 'PURPLE',
+        source: 'Sky Sports Breaking News',
+        author: 'Ban Thể Thao Châu Âu',
+        role: 'Phân tích trực tiếp',
+        avatar: '🔥',
+        headline: 'SIÊU SAO ĐỊNH ĐOẠT: BÀN THẮNG VÀNG PHÚT BÙ GIỜ CỦA [Tên Cầu Thủ]!',
+        content: 'Khoảnh khắc không tưởng làm nổ tung cầu trường! [Tên Cầu Thủ] một lần nữa chứng minh bản lĩnh của một ngôi sao lớn với pha lập công định đoạt số phận trận đấu khi đồng hồ điểm những giây bù giờ cuối cùng!',
+        highlightTag: '⏱️ CLUTCH MOMENT 90+'
+      });
+      addMediaReaction(player, {
+        category: 'FAN',
+        badge: 'BLUE',
+        source: 'Twitter / X',
+        author: '@ClutchKingWatcher',
+        role: 'CĐV Cuồng Nhiệt',
+        avatar: '💬',
+        content: 'TIM TÔI NHƯ RỚT RA NGOÀI! Bàn thắng phút bù giờ của [Tên Cầu Thủ] là khoảnh khắc điên rồ nhất mùa giải này! Đẳng cấp siêu sao không thể phủ nhận! 💥⚽🔥',
+        metrics: { likes: '89.4K', retweets: '27.8K', comments: '1.9K' }
+      });
+    } else if (milestoneId === 'FIRST_HATTRICK') {
+      addMediaReaction(player, {
+        category: 'PRESS',
+        badge: 'PURPLE',
+        source: 'The Athletic',
+        author: 'James Pearce',
+        role: 'Ký giả cấp cao',
+        avatar: '🎩',
+        headline: 'CÚ HATTRICK ĐỂ ĐỜI: [Tên Cầu Thủ] HỦY DIỆT HÀNG PHÒNG NGỰ ĐỐI PHƯƠNG!',
+        content: 'Ba bàn thắng, một đẳng cấp vượt trội. [Tên Cầu Thủ] đã mang đến một bữa tiệc bóng đá thịnh soạn khiến hàng thủ đối phương hoàn toàn bất lực. Trái bóng trận đấu đã thuộc về người xứng đáng nhất!',
+        highlightTag: '🎩 HATTRICK LỊCH SỬ'
+      });
+    }
+  } catch (err) {
+    console.error("Error triggering milestone media reaction:", err);
+  }
+
   return entry;
 }
 
@@ -629,4 +693,290 @@ export function updateCompetitionTier(player) {
   }
 
   return player.competitionTier;
+}
+
+/* =========================================================================
+   MEDIA & FAN REACTION HUB (TRUYỀN THÔNG & DƯ LUẬN)
+   ========================================================================= */
+
+/**
+ * Đảm bảo mảng mediaFeed luôn tồn tại và có các tin tức khởi đầu (Scout report / Chào đón)
+ * @param {object} player 
+ */
+export function ensurePlayerMediaFeed(player) {
+  if (!player) return [];
+  if (!Array.isArray(player.mediaFeed)) {
+    player.mediaFeed = [];
+  }
+  if (player.mediaFeed.length === 0) {
+    const clubName = player.isAcademyStage 
+      ? (player.academy?.name || "Học viện bóng đá") 
+      : (player.currentClub?.name || "CLB Chuyên Nghiệp");
+    const playerName = player.name || "Tân binh";
+
+    addMediaReaction(player, {
+      category: 'PRESS',
+      badge: 'BLUE',
+      source: 'Báo Bóng Đá & Ký Giả Trẻ',
+      author: 'Chuyên trang Tuyển Trạch Toàn Quốc',
+      role: 'Báo chí thể thao',
+      avatar: '🗞️',
+      headline: `BƯỚC RA ÁNH SÁNG: ${playerName.toUpperCase()} CHÍNH THỨC GIA NHẬP ${clubName.toUpperCase()}!`,
+      content: `Các chuyên gia tuyển trạch đánh giá rất cao tiềm năng và tố chất bẩm sinh của ${playerName}. Hành trình vươn mình từ học viện trẻ bước ra vũ đài đỉnh cao chính thức bắt đầu!`,
+      highlightTag: '🌱 TÀI NĂNG TRẺ'
+    });
+  }
+  return player.mediaFeed;
+}
+
+/**
+ * Thêm một phản ứng truyền thông / bình luận MXH mới vào feed người chơi (giới hạn 50 tin mới nhất)
+ * @param {object} player 
+ * @param {object} reaction 
+ * @returns {object|null}
+ */
+export function addMediaReaction(player, reaction = {}) {
+  if (!player) return null;
+  if (!Array.isArray(player.mediaFeed)) {
+    player.mediaFeed = [];
+  }
+
+  const playerName = player.name || "Cầu thủ";
+  const clubName = player.isAcademyStage 
+    ? (player.academy?.name || "Học viện") 
+    : (player.currentClub?.name || "CLB");
+
+  const item = {
+    id: `media_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    timestamp: Date.now(),
+    season: player.seasonCount || (player.seasonsPlayed || 0) + 1,
+    age: player.age || 16,
+    timeLabel: reaction.timeLabel || `Mùa ${player.seasonCount || (player.seasonsPlayed || 0) + 1}${player.currentFixtureIndex != null ? ` • Vòng ${player.currentFixtureIndex + 1}` : ''}`,
+    category: reaction.category || 'PRESS', // 'PRESS' | 'FAN' | 'TEAM' | 'AWARDS'
+    badge: reaction.badge || 'NORMAL',      // 'GOLD' | 'CHAMPION' | 'PURPLE' | 'BLUE' | 'NORMAL'
+    source: reaction.source || "Báo Thể Thao",
+    author: reaction.author || "Ký giả thể thao",
+    role: reaction.role || "Truyền thông",
+    avatar: reaction.avatar || "🗞️",
+    verified: reaction.verified !== undefined ? reaction.verified : true,
+    headline: (reaction.headline || "")
+      .replace(/\[Tên Cầu Thủ\]/g, playerName)
+      .replace(/\[CLB\]/g, clubName),
+    content: (reaction.content || "")
+      .replace(/\[Tên Cầu Thủ\]/g, playerName)
+      .replace(/\[CLB\]/g, clubName),
+    metrics: reaction.metrics || null,
+    highlightTag: reaction.highlightTag || null
+  };
+
+  player.mediaFeed.unshift(item);
+
+  // Giới hạn bộ nhớ tối đa 50 tin mới nhất để giữ file save nhẹ
+  if (player.mediaFeed.length > 50) {
+    player.mediaFeed.length = 50;
+  }
+
+  return item;
+}
+
+/**
+ * Kích hoạt phản ứng truyền thông cho màn trình diễn xuất thần (Match Rating >= 9.0)
+ * @param {object} player 
+ * @param {object} matchData 
+ */
+export function triggerMatchRatingMedia(player, matchData = {}) {
+  if (!player) return;
+  const rating = Number(matchData.rating || 9.0).toFixed(1);
+  const roundText = matchData.roundName || `Vòng ${(player.currentFixtureIndex || 0) + 1}`;
+
+  // 1. Bài viết phân tích từ báo chí uy tín quốc tế
+  const pressSources = [
+    { source: "The Athletic", author: "David Ornstein", role: "Chuyên gia phân tích độc quyền", avatar: "🗞️" },
+    { source: "L'Équipe", author: "Vincent Duluc", role: "Trưởng ban túc cầu Châu Âu", avatar: "🗞️" },
+    { source: "Sky Sports Football", author: "Gary Neville & Jamie Carragher", role: "Bình luận viên Super Sunday", avatar: "📺" },
+    { source: "Marca", author: "José Félix Díaz", role: "Ký giả kỳ cựu", avatar: "🗞️" }
+  ];
+  const pSrc = pressSources[Math.floor(Math.random() * pressSources.length)];
+
+  addMediaReaction(player, {
+    category: 'PRESS',
+    badge: 'PURPLE',
+    source: pSrc.source,
+    author: pSrc.author,
+    role: pSrc.role,
+    avatar: pSrc.avatar,
+    headline: `CƠN CUỒNG PHONG [Tên Cầu Thủ] CUỐN PHĂNG ĐỐI THỦ! CHẤM ĐIỂM ${rating} TUYỆT ĐỐI!`,
+    content: `Một màn trình diễn thăng hoa tột đỉnh! [Tên Cầu Thủ] đã biến trận đấu tại ${roundText} thành sân khấu độc diễn của riêng mình. Không một hàng phòng ngự nào có thể ngăn cản bước chạy và sự bùng nổ của siêu sao này hôm nay!`,
+    highlightTag: `🔥 ĐIỂM SỐ ${rating} SIÊU THỰC`
+  });
+
+  // 2. Tweet / Bình luận mạng xã hội viral từ cộng đồng CĐV
+  const fanTweets = [
+    {
+      author: "@TacticalMastery",
+      role: "Nhà phân tích chiến thuật",
+      content: `Xem [Tên Cầu Thủ] đá bóng hôm nay đúng là một đặc ân! Hãy trao luôn mọi danh hiệu cá nhân cho cậu ấy đi! 90 phút vừa rồi không phải bóng đá thông thường, đó là một buổi biểu diễn nghệ thuật thuần khiết! ✨⚽`,
+      likes: `${(Math.random() * 50 + 100).toFixed(1)}K`,
+      retweets: `${(Math.random() * 20 + 25).toFixed(1)}K`,
+      comments: `${(Math.random() * 2 + 1).toFixed(1)}K`
+    },
+    {
+      author: "@FootballFanatic_HQ",
+      role: "CĐV Toàn Cầu",
+      content: `Trời đất ơi, vừa chứng kiến điều kỳ diệu gì thế này?! [Tên Cầu Thủ] đang chơi thứ bóng đá đến từ một hành tinh khác! Cả khán đài đã phải đồng loạt đứng dậy vỗ tay tán thưởng sau hồi còi mãn cuộc! 👏🔥`,
+      likes: `${(Math.random() * 40 + 80).toFixed(1)}K`,
+      retweets: `${(Math.random() * 15 + 18).toFixed(1)}K`,
+      comments: `${(Math.random() * 1.5 + 0.8).toFixed(1)}K`
+    }
+  ];
+
+  const chosenTweet = fanTweets[Math.floor(Math.random() * fanTweets.length)];
+  addMediaReaction(player, {
+    category: 'FAN',
+    badge: 'PURPLE',
+    source: 'Twitter / X',
+    author: chosenTweet.author,
+    role: chosenTweet.role,
+    avatar: '💬',
+    content: chosenTweet.content,
+    metrics: { likes: chosenTweet.likes, retweets: chosenTweet.retweets, comments: chosenTweet.comments },
+    highlightTag: '⚡ VIRAL SOCIAL MEDIA'
+  });
+}
+
+/**
+ * Kích hoạt phản ứng truyền thông khi đoạt danh hiệu Cầu Thủ Xuất Sắc Nhất Giải (MVP)
+ * @param {object} player 
+ * @param {string} mvpTitle 
+ * @param {string} compName 
+ * @param {string} mvpScore 
+ */
+export function triggerMvpAwardMedia(player, mvpTitle = "Cầu Thủ Xuất Sắc Nhất", compName = "Giải Đấu", mvpScore = "") {
+  if (!player) return;
+
+  // 1. Phỏng vấn ca ngợi từ Huấn luyện viên trưởng
+  addMediaReaction(player, {
+    category: 'TEAM',
+    badge: 'GOLD',
+    source: 'Họp Báo Chính Thức Sau Giải Đấu',
+    author: 'Huấn Luyện Viên Trưởng',
+    role: 'HLV Trưởng [CLB]',
+    avatar: '👔',
+    headline: `HLV Trưởng: "Cậu ấy là món quà của bóng đá thế giới"`,
+    content: `“Cậu ấy là món quà của bóng đá. Danh hiệu ${mvpTitle} hoàn toàn xứng đáng với những nỗ lực không tưởng trên sân tập mỗi ngày. Ở độ tuổi trẻ như vậy mà gánh vác cả đội bóng trên vai, tôi không còn mỹ từ nào để khen ngợi [Tên Cầu Thủ]!”`,
+    highlightTag: '👔 PHÁT BIỂU HLV TRƯỞNG'
+  });
+
+  // 2. Trích dẫn xúc động từ Đội trưởng / Đồng đội trong phòng thay đồ
+  addMediaReaction(player, {
+    category: 'TEAM',
+    badge: 'GOLD',
+    source: 'Phòng Thay Đồ & Mixed Zone',
+    author: 'Đội Trưởng & Toàn Đội',
+    role: 'Đại diện cầu thủ [CLB]',
+    avatar: '🤝',
+    headline: `Đội Trưởng: "Chiếc cúp MVP này là niềm tự hào chung của cả phòng thay đồ"`,
+    content: `“Được thi đấu bên cạnh [Tên Cầu Thủ] là một niềm vinh dự lớn. Cậu ấy truyền cảm hứng cho toàn đội mỗi khi bóng chạm chân. Chúng tôi biết khi chuyền bóng cho cậu ấy, điều kỳ diệu sẽ xảy ra. Chiếc cúp MVP này là niềm tự hào chung của toàn đội!”`,
+    highlightTag: '🤝 ĐỒNG ĐỘI TÔN VINH'
+  });
+
+  // 3. Tin tức Breaking News từ ký giả quốc tế
+  addMediaReaction(player, {
+    category: 'AWARDS',
+    badge: 'GOLD',
+    source: 'Fabrizio Romano (Official)',
+    author: '@FabrizioRomano',
+    role: 'Ký giả tin tức & chuyển nhượng số 1 thế giới',
+    avatar: '🌟',
+    headline: `CHÍNH THỨC: [Tên Cầu Thủ] THỐNG TRỊ ${compName.toUpperCase()} VỚI DANH HIỆU MVP!`,
+    content: `Chính thức: [Tên Cầu Thủ] thống trị ${compName} với danh hiệu Cầu Thủ Xuất Sắc Nhất Giải${mvpScore ? ` (${mvpScore})` : ''}! Một mùa giải đi vào lịch sử túc cầu. Tất cả các tuyển trạch viên hàng đầu thế giới đang dõi theo từng bước chạy của viên ngọc quý này! 🚨💎`,
+    metrics: { likes: '342.6K', retweets: '89.4K', comments: '6.8K' },
+    highlightTag: '🌟 TOURNAMENT MVP'
+  });
+}
+
+/**
+ * Kích hoạt phản ứng truyền thông khi vô địch giải đấu tập thể
+ * @param {object} player 
+ * @param {string} trophyName 
+ * @param {string} compName 
+ */
+export function triggerTrophyWinMedia(player, trophyName = "Cúp Vô Địch", compName = "Giải Đấu") {
+  if (!player) return;
+
+  // 1. Fan diễu hành ăn mừng cuồng nhiệt trên MXH
+  addMediaReaction(player, {
+    category: 'FAN',
+    badge: 'CHAMPION',
+    source: 'Twitter / X Trending #CHAMPIONS',
+    author: '@ClubFanbaseGlobal',
+    role: 'Cộng đồng CĐV toàn cầu',
+    avatar: '🏆',
+    headline: `BIỂN NGƯỜI ĐỔ RA ĐƯỜNG ĂN MỪNG CHỨC VÔ ĐỊCH ${trophyName.toUpperCase()}!`,
+    content: `Hàng triệu CĐV đang đổ ra đường diễu hành ăn mừng chức vô địch ${trophyName}! [Tên Cầu Thủ] chính là linh hồn và người hùng đưa chúng ta bước lên đỉnh vinh quang sau chiến dịch xưng vương nghẹt thở! 🏆🎉🔴⚪`,
+    metrics: { likes: '280.5K', retweets: '64.2K', comments: '5.1K' },
+    highlightTag: '🏆 BIỂN NGƯỜI ĂN MỪNG'
+  });
+
+  // 2. Huyền thoại CLB lên tiếng trên truyền hình
+  addMediaReaction(player, {
+    category: 'PRESS',
+    badge: 'CHAMPION',
+    source: 'BBC Match of the Day',
+    author: 'Huyền Thoại CLB',
+    role: 'Chuyên gia bình luận bóng đá',
+    avatar: '👑',
+    headline: `Huyền Thoại CLB: "[Tên Cầu Thủ] sở hữu DNA của một nhà vô địch vĩ đại"`,
+    content: `“Đã rất lâu rồi tôi mới thấy một cầu thủ có tầm ảnh hưởng lên lối chơi và tinh thần toàn đội lớn đến như vậy trong chiến dịch xưng vương. Chiếc cúp ${trophyName} này mới chỉ là sự khởi đầu cho một triều đại thống trị!”`,
+    highlightTag: '👑 HUYỀN THOẠI LÊN TIẾNG'
+  });
+
+  // 3. Trang bìa báo quốc tế
+  addMediaReaction(player, {
+    category: 'AWARDS',
+    badge: 'CHAMPION',
+    source: "L'Équipe & Marca Cover",
+    author: 'Ban Biên Tập Thể Thao Quốc Tế',
+    role: 'Trang nhất nhật báo thể thao',
+    avatar: '🗞️',
+    headline: `ĐỈNH CAO DANH VỌNG: [Tên Cầu Thủ] BƯỚC LÊN NGAI VÀNG ${trophyName.toUpperCase()}!`,
+    content: `Chiến thắng lịch sử! [Tên Cầu Thủ] cùng các đồng đội nâng cao chiếc cúp vô địch ${trophyName} sau một mùa giải áp đảo toàn diện. Lịch sử đã khắc tên những nhà vô địch xứng đáng nhất!`,
+    highlightTag: '🏆 NHÀ VÔ ĐỊCH'
+  });
+}
+
+/**
+ * Kích hoạt phản ứng truyền thông khi đoạt Quả Bóng Vàng (Ballon d'Or)
+ * @param {object} player 
+ * @param {number} rank 
+ */
+export function triggerBallonDorMedia(player, rank = 1) {
+  if (!player) return;
+
+  if (rank === 1) {
+    addMediaReaction(player, {
+      category: 'AWARDS',
+      badge: 'GOLD',
+      source: 'France Football (Ballon d\'Or Official)',
+      author: 'Ban Tổ Chức Quả Bóng Vàng',
+      role: 'Gala Nhà Hát Châtelet Paris',
+      avatar: '👑',
+      headline: `CHÍNH THỨC: [Tên Cầu Thủ] ĐOẠT QUẢ BÓNG VÀNG THẾ GIỚI (BALLON D'OR)!`,
+      content: `Lễ trao giải Ballon d'Or tại Paris chính thức xướng tên [Tên Cầu Thủ] là Cầu Thủ Xuất Sắc Nhất Hành Tinh! Thế giới túc cầu chính thức đón chào một vị vua mới ngự trị trên đỉnh cao nhất của bóng đá thế giới!`,
+      metrics: { likes: '1.5M', retweets: '520.4K', comments: '35.6K' },
+      highlightTag: '👑 QUẢ BÓNG VÀNG THẾ GIỚI'
+    });
+
+    addMediaReaction(player, {
+      category: 'FAN',
+      badge: 'GOLD',
+      source: 'Twitter / X Trending #1 Worldwide',
+      author: '@WorldFootballNews',
+      role: 'Kênh tin tức bóng đá toàn cầu',
+      avatar: '💬',
+      content: `Không còn bất kỳ tranh cãi nào nữa: [Tên Cầu Thủ] là CẦU THỦ XUẤT SẮC NHẤT HÀNH TINH! Cả thế giới bóng đá đang nghiêng mình trước thiên tài này! #BallonDor #GOAT 🐐🏆✨`,
+      metrics: { likes: '890.2K', retweets: '235.1K', comments: '18.7K' },
+      highlightTag: '🐐 #GOAT TRENDING #1'
+    });
+  }
 }

@@ -211,6 +211,9 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     careerChronicleLog:  [],        // Mảng các sự kiện cột mốc có cấu trúc & huy hiệu
     achievedMilestones:  {},        // Bản đồ ghi nhận các cột mốc đã mở khóa (first_goal, first_hattrick, ...)
 
+    // ── Media & Fan Reaction Hub (Dư Luận & Mạng Xã Hội) ─────────────────────
+    mediaFeed:           [],        // Mảng tin tức truyền thông, phản ứng fan và trích dẫn phỏng vấn (tối đa 40-50 tin)
+
     // ── Multi-Tier Competition System (Đấu Trường Đa Cấp Độ) ────────────────
     competitionTier: {
       currentTier:          3,      // 1: Top 5 & C1 | 2: Hạng Nhất & C2 | 3: Giải trẻ / MLS / Saudi
