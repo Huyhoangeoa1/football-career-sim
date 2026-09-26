@@ -1,0 +1,150 @@
+/* =========================================================================
+   FOOTBALL CAREER SIMULATOR — STORE, LIFESTYLE & ASSETS STYLES
+   ========================================================================= */
+
+.lifestyle-section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 10px 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lifestyle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lifestyle-item-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all 0.2s ease;
+}
+.lifestyle-item-card:hover {
+  border-color: var(--accent-blue);
+  background: var(--bg-card-subtle);
+}
+.lifestyle-item-card.owned {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.lifestyle-card-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.lifestyle-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lifestyle-card-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-tag-sm {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent-blue);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.badge-tag-sm.sub {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--accent-purple);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.badge-tag-sm.gold {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-gold);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.lifestyle-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.lifestyle-card-buff {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-green);
+}
+
+.lifestyle-card-cost {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.btn-lifestyle {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-lifestyle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--accent-green-glow);
+}
+.btn-lifestyle:disabled,
+.btn-lifestyle.disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border: 1px solid var(--border-color);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-lifestyle.owned {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.btn-lifestyle.owned:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}
+
+.owned-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--accent-green);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  white-space: nowrap;
+}

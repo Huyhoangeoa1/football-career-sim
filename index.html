@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Football Career Simulator — Siêu Sao Bóng Đá & Đỉnh Cao Châu Âu</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/store.css">
+  <link rel="stylesheet" href="css/modal.css">
+
+  <!-- CDN: html2canvas (xuất thẻ PNG) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+
+  <style>
+    .logo-area {
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .logo-area:hover {
+      opacity: 0.88;
+      transform: scale(1.01);
+    }
+    .logo-area:active {
+      transform: scale(0.99);
+    }
+    .header-new-career-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .header-new-career-badge:hover {
+      background: rgba(16, 185, 129, 0.35);
+      color: #ffffff;
+      border-color: rgba(16, 185, 129, 0.7);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="logo-area" id="headerLogoArea" title="Tạo cầu thủ mới / Bắt đầu sự nghiệp mới" onclick="window.handleHeaderNewCareerClick && window.handleHeaderNewCareerClick()">
+        <div class="logo-icon">⚽</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="logo-title">FOOTBALL CAREER SIMULATOR</div>
+            <span class="header-new-career-badge" id="btnHeaderNewCareerBadge" title="Tạo cầu thủ mới / Bắt đầu sự nghiệp mới">➕ New Career</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Top 5 European Leagues & Multi-Tournaments</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="season-badge" id="headerSeason">
+          <span>🗓️</span> Năm <span id="dispCurrentYear">2026</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!-- 1. SETUP SCREEN (Character Creation)       -->
+    <!-- ========================================== -->
+    <div id="screenSetup" class="view-screen active">
+      <div class="card setup-main-card">
+        <div class="setup-header">
+          <div class="setup-title-badge">🌟 FOOTBALL CAREER CREATION</div>
+          <h2>Khởi Tạo Sự Nghiệp Tân Binh</h2>
+          <p>Bắt đầu hành trình thần đồng 16 tuổi tại Lò đào tạo trẻ danh tiếng hàng đầu châu Âu &amp; Việt Nam</p>
+        </div>
+
+        <!-- 2. TINH GỌN KHU VỰC SAVE SLOTS: Thanh selector ngang tinh tế phía trên cùng -->
+        <div class="save-slots-horizontal-bar">
+          <div class="slots-bar-left">
+            <span class="slots-bar-icon">💾</span>
+            <span class="slots-bar-label">Ô LƯU:</span>
+          </div>
+          <div class="save-slots-pills-row" id="saveSlotsPillsBar">
+            <!-- Rendered via JS: 5 compact slot pills -->
+          </div>
+          <button type="button" class="btn btn-secondary btn-slots-manage" id="btnOpenSaveSlotsModal" onclick="window.openSaveSlotsModal && openSaveSlotsModal()" title="Xem & Quản lý toàn bộ 5 slot lưu">
+            📂 Quản Lý 5 Slot
+          </button>
+        </div>
+        <div id="slotActiveStatusNote" class="slot-status-note">
+          <!-- Rendered via JS: Note about current slot -->
+        </div>
+
+        <!-- 1. BỐ CỤC CHIA 2 CỘT (SPLIT-SCREEN MODERN UI) -->
+        <div class="setup-split-container">
+          
+          <!-- CỘT BÊN TRÁI: CÁC TRƯỜNG TÙY BIẾN -->
+          <div class="setup-form-column">
+            
+            <!-- 1.1 Họ & Tên Cầu Thủ -->
+            <div class="form-group setup-card-section">
+              <label for="inputPlayerName" class="section-label">
+                <span class="lbl-icon">👤</span> Họ &amp; Tên Cầu Thủ
+              </label>
+              <input type="text" id="inputPlayerName" class="text-input" placeholder="Nhập họ và tên cầu thủ..." autocomplete="off">
+              <span class="input-hint">💡 Gõ họ tên để xem cập nhật trực tiếp trên thẻ Tân Binh (Để trống sẽ sinh tên ngẫu nhiên theo quốc gia)</span>
+            </div>
+
+            <!-- 1.2 Quốc Tịch / Đội Tuyển Quốc Gia -->
+            <div class="form-group setup-card-section">
+              <div class="section-header-flex">
+                <label class="section-label"><span class="lbl-icon">🌍</span> Quốc Tịch / Đội Tuyển Quốc Gia</label>
+                <span class="section-badge-hint">★ 24 Quốc Gia • 4 Châu Lục</span>
+              </div>
+              <!-- Regional Filter Tabs -->
+              <div class="setup-filter-tabs" id="natRegionTabs">
+                <button type="button" class="setup-filter-pill active" data-region="ALL">Tất Cả (24)</button>
+                <button type="button" class="setup-filter-pill" data-region="ASIA">🌏 Châu Á (6)</button>
+                <button type="button" class="setup-filter-pill" data-region="UEFA">🇪🇺 Châu Âu (10)</button>
+                <button type="button" class="setup-filter-pill" data-region="CONMEBOL">🌎 Nam Mỹ (4)</button>
+                <button type="button" class="setup-filter-pill" data-region="CAF">🌍 Châu Phi (4)</button>
+              </div>
+              <div class="nationality-grid" id="nationalityGrid">
+                <!-- Rendered dynamically via renderNationalityOptions in JS -->
+              </div>
+            </div>
+
+            <!-- 1.3 Vị Trí Sở Trường (11 Vị Trí Chính Thức) -->
+            <div class="form-group setup-card-section">
+              <div class="section-header-flex">
+                <label class="section-label"><span class="lbl-icon">⚡</span> Vị Trí Sở Trường (11 Vị Trí)</label>
+                <span class="section-badge-hint">★ 4 Tuyến Thi Đấu Chuẩn</span>
+              </div>
+              <!-- 4 Line Filter Tabs -->
+              <div class="setup-filter-tabs" id="posLineTabs">
+                <button type="button" class="setup-filter-pill active" data-line="ALL">Tất Cả (11)</button>
+                <button type="button" class="setup-filter-pill" data-line="GK">🧤 Thủ Môn (1)</button>
+                <button type="button" class="setup-filter-pill" data-line="DF">🛡️ Hậu Vệ (3)</button>
+                <button type="button" class="setup-filter-pill" data-line="MF">🎯 Tiền Vệ (5)</button>
+                <button type="button" class="setup-filter-pill" data-line="FW">⚡ Tiền Đạo (3)</button>
+              </div>
+              <div class="position-grid" id="positionGrid">
+                <!-- Rendered dynamically via renderPositionOptions in JS -->
+              </div>
+            </div>
+
+            <!-- 1.4 Chọn Lò Đào Tạo Khởi Đầu (16 Học Viện Trẻ) -->
+            <div class="form-group setup-card-section">
+              <div class="section-header-flex">
+                <label class="section-label"><span class="lbl-icon">🌱</span> Chọn Lò Đào Tạo Khởi Đầu (16 Học Viện Trẻ)</label>
+                <span class="section-badge-hint" style="color:var(--accent-gold);">★ Nơi khởi nguồn danh tiếng</span>
+              </div>
+              <div class="academy-grid" id="academyGrid">
+                <!-- Rendered dynamically via JS (16 Elite Academies) -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- CỘT BÊN PHẢI: THẺ CẦU THỦ TÂN BINH (FUT-STYLE ROOKIE CARD) THỜI GIAN THỰC -->
+          <div class="setup-preview-column">
+            <div class="rookie-preview-sticky">
+              <div class="rookie-preview-header">
+                <span class="rookie-badge-pill" id="rookieCardEditionBadge">FUTURE</span>
+                <span class="rookie-live-tag">LIVE PREVIEW</span>
+              </div>
+
+              <!-- Thẻ Khiên Fut-style Tân Binh 3D Metallic -->
+              <div class="rookie-card-outer theme-future" id="rookieCardOuter">
+                <div class="rookie-card-inner">
+                  
+                  <!-- Top Row: OVR, POS, Flag, Club Icon & Avatar Silhouette -->
+                  <div class="rookie-card-top">
+                    <div class="rookie-meta-left">
+                      <div class="rookie-ovr" id="rookieCardOvr">55</div>
+                      <div class="rookie-pos" id="rookieCardPos">ST</div>
+                      <div class="rookie-flag" id="rookieCardNationFlag" title="Quốc tịch">🇻🇳</div>
+                      <div class="rookie-club-icon" id="rookieCardClubIcon" title="Học viện trẻ">PVF</div>
+                    </div>
+                    <div class="rookie-avatar-box">
+                      <div class="rookie-avatar-silhouette" id="rookieCardAvatar">⚡</div>
+                      <div class="rookie-star-glow"></div>
+                    </div>
+                  </div>
+
+                  <!-- Center: Name Ribbon & Club / League Info -->
+                  <div class="rookie-card-center">
+                    <div class="rookie-name-ribbon" id="rookieCardName">TÂN BINH VÔ DANH</div>
+                    <div class="rookie-club-ribbon">
+                      <span id="rookieCardClubName">Học Viện Trẻ PVF</span> • <span id="rookieCardNationName">Việt Nam</span>
+                    </div>
+                  </div>
+
+                  <!-- Metallic Divider Line -->
+                  <div class="rookie-divider">
+                    <span class="rookie-divider-line"></span>
+                  </div>
+
+                  <!-- 6 FUT Stats Grid (PAC, SHO, PAS, DRI, DEF, PHY) -->
+                  <div class="rookie-stats-grid" id="rookieCardStats">
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">58</span><span class="rookie-stat-lbl">PAC</span></div>
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">52</span><span class="rookie-stat-lbl">DRI</span></div>
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">55</span><span class="rookie-stat-lbl">SHO</span></div>
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">34</span><span class="rookie-stat-lbl">DEF</span></div>
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">51</span><span class="rookie-stat-lbl">PAS</span></div>
+                    <div class="rookie-stat-item"><span class="rookie-stat-val">40</span><span class="rookie-stat-lbl">PHY</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Badge trạng thái cầu thủ nằm ngoài phôi thẻ -->
+              <div class="preview-badge-status">⭐ RISING STAR • 16 TUỔI • TÂN BINH ACADEMY</div>
+
+              <div class="rookie-card-hint">
+                <span>⚡ Chỉ số khởi điểm 16 tuổi. Tỏa sáng qua từng trận đấu để nâng cấp lên các phôi thẻ <strong>GOLD</strong>, <strong>TOTY</strong> &amp; <strong>ICON</strong>!</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. NÚT XÁC NHẬN (CALL-TO-ACTION): ĐẶT LỚN NỔI BẬT DƯỚI ĐÁY -->
+        <div class="setup-cta-container">
+          <button class="btn btn-primary btn-cta-start" id="btnConfirmCreatePlayer"
+            onclick="window.confirmAndStartCareer ? confirmAndStartCareer() : (window.startCareer ? startCareer() : null)">
+            ✍️ KÝ HỢP ĐỒNG GIA NHẬP ACADEMY &amp; BẮT ĐẦU
+          </button>
+          <!-- Alias button ID for backwards compatibility with tests -->
+          <button id="btnStartCareer" style="display:none;" onclick="window.confirmAndStartCareer ? confirmAndStartCareer() : (window.startCareer ? startCareer() : null)"></button>
+
+          <div class="setup-extra-actions">
+            <button class="btn btn-secondary btn-load-career" id="btnLoadCareer" style="display: none;"
+              onclick="window.loadCareer && loadCareer()">
+              💾 Tiếp Tục Sự Nghiệp (Gần Nhất)
+            </button>
+            <button class="btn btn-secondary btn-slots-modal" id="btnShowSlotsList" style="display: none;"
+              onclick="window.openSaveSlotsModal && openSaveSlotsModal()">
+              📂 Danh Sách 5 Slot Lưu
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. GAMEPLAY DASHBOARD                      -->
+    <!-- ========================================== -->
+    <div id="screenDashboard" class="view-screen">
+      
+      <!-- Top Profile & Stats Grid -->
+      <div class="dashboard-top">
+        
+        <!-- Left Profile Card -->
+        <div class="card profile-card">
+          <div>
+            <div class="player-meta">
+              <div class="avatar-wrap">
+                <span id="playerAvatar">⚡</span>
+                <span class="player-pos-tag" id="dispPos">FW</span>
+              </div>
+              <div class="player-details">
+                <h3 id="dispName">Hoàng Sơn 🇻🇳</h3>
+                <div class="club-tag-row">
+                  <span class="club-badge-tag">
+                    <span id="dispClubIcon">🔴</span> <span id="dispClubName">Hà Nội FC</span>
+                  </span>
+                  <span class="league-badge-tag" id="dispLeagueName">🇻🇳 V-League</span>
+                  <span class="europe-badge-tag" id="dispEuropeStatus">🏆 UEFA Champions League</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financials & Performance Metrics -->
+            <div class="metrics-row">
+              <div class="metric-item">
+                <div class="val" id="dispAge">16</div>
+                <div class="lbl">Tuổi</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:var(--accent-gold);" id="dispMoney">$5.0k</div>
+                <div class="lbl">Tiền Mặt</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:var(--accent-blue);" id="dispMarketValue">€5.0M</div>
+                <div class="lbl">Định Giá Transfermarkt</div>
+              </div>
+            </div>
+
+            <div class="metrics-row" style="margin-top: 6px;">
+              <div class="metric-item">
+                <div class="val" style="color:var(--accent-green);" id="dispSalary">€300 / week</div>
+                <div class="lbl">Lương / Tuần</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:#fff;" id="dispClubMatches">0</div>
+                <div class="lbl">Số Trận Đã Đá</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:#f59e0b;" id="dispTrophies">0 🏆</div>
+                <div class="lbl">Danh Hiệu</div>
+              </div>
+            </div>
+
+            <div class="metrics-row" style="margin-top: 6px;">
+              <div class="metric-item">
+                <div class="val" style="color:#38bdf8;" id="dispStat1Val">0</div>
+                <div class="lbl" id="dispStat1Label">Bàn Thắng</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:#a855f7;" id="dispStat2Val">0</div>
+                <div class="lbl" id="dispStat2Label">Kiến Tạo</div>
+              </div>
+              <div class="metric-item">
+                <div class="val" style="color:#10b981;" id="dispNetWorthLive">$0</div>
+                <div class="lbl">Tài Sản Ròng</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trophies Showcase Mini -->
+          <div style="margin-top: 12px;">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Phòng Truyền Thống</div>
+            <div class="trophy-showcase" id="trophyShowcaseList">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- FCS Ultimate Card: Thẻ cầu thủ phong cách EA FC 26 -->
+          <div class="fcs-card-section" style="margin-top: 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">🃏 Thẻ Cầu Thủ (FCS Card)</span>
+              <span id="fcsCurrentEditionBadge" class="fcs-edition-pill">GOLD</span>
+            </div>
+            
+            <div id="fcsCardWrapper" class="fcs-card-center-box">
+              <div id="fcsCardContainer" class="fcs-card-slot">
+                <!-- Rendered via renderFcsUltimateCard() in ui.js -->
+              </div>
+            </div>
+
+            <!-- Controls bar: Đổi mùa, Đổi ảnh đại diện, Xuất PNG -->
+            <div class="fcs-card-actions" id="fcsCardActions">
+              <button class="fcs-action-btn" id="btnOpenThemeModal" title="Đổi giao diện phôi mùa thẻ EA FC">
+                🎨 Đổi Mùa Thẻ
+              </button>
+              <button class="fcs-action-btn" id="btnOpenAvatarModal" title="Chọn mẫu avatar hoặc dán link ảnh tùy chọn">
+                👤 Đổi Ảnh Đại Diện
+              </button>
+              <button class="fcs-action-btn" id="btnExportCardPng" title="Xuất thẻ dạng ảnh PNG chất lượng cao">
+                📸 Xuất Thẻ PNG
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Stats & Rival Card -->
+        <div class="card stats-card">
+          <div>
+            <div class="stats-block-title">CHỈ SỐ CHUYÊN MÔN (FIFA ATTRIBUTES)</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatPac">⚡ Tốc Độ (PAC)</span>
+                  <span class="stat-num" id="valStatPac">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatPac" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatSho">🎯 Dứt Điểm / Sút (SHO)</span>
+                  <span class="stat-num" id="valStatSho">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatSho" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatPas">👟 Chuyền Bóng (PAS)</span>
+                  <span class="stat-num" id="valStatPas">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatPas" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatDri">🪄 Rê Bóng / Xử Lý (DRI)</span>
+                  <span class="stat-num" id="valStatDri">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatDri" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatDef">🛡️ Phòng Ngự (DEF)</span>
+                  <span class="stat-num" id="valStatDef">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatDef" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblStatPhy">💪 Thể Chất / Tì Đè (PHY)</span>
+                  <span class="stat-num" id="valStatPhy">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-attr" id="barStatPhy" style="width: 55%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 6px;">
+            <div class="stats-block-title">Thể Trạng & Danh Tiếng</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name">💪 Thể Lực (Stamina)</span>
+                  <span class="stat-num" id="valStam">65</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-stam" id="barStam" style="width: 65%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name">🔥 Phong Độ (Form)</span>
+                  <span class="stat-num" id="valForm">55</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-form" id="barForm" style="width: 55%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name" id="lblFameTitle">🌟 Danh Tiếng: ⚪ Tân Binh Vô Danh</span>
+                  <span class="stat-num" id="valFame">10 / 200 pts</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-fame" id="barFame" style="width: 10%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name">🧠 Tinh Thần (Morale)</span>
+                  <span class="stat-num" id="valMorale">80</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-morale" id="barMorale" style="width: 80%;"></div></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-info">
+                  <span class="stat-name">👔 Niềm Tin HLV (Trust)</span>
+                  <span class="stat-num" id="valManagerTrust">70</span>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-fill fill-trust" id="barManagerTrust" style="width: 70%; background: linear-gradient(90deg, #3b82f6, #60a5fa);"></div></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                <span style="font-size: 0.74rem; color: var(--text-muted);">Vai trò:</span>
+                <span id="dispSquadRoleBadge" style="font-size: 0.74rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);">👑 Trụ Cột (Key Player)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rival Widget Box -->
+          <div class="rival-card-container" id="rivalWidgetBox" style="margin-top: 8px;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Active Buffs & Equipment Strip on Dashboard -->
+      <div class="active-buffs-bar">
+        <div class="active-buffs-label">⚡ Trang Bị & Buff Đang Kích Hoạt:</div>
+        <div class="buff-pill-container" id="activeBuffsContainer">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Modern Horizontal Navigation Tab Bar -->
+      <div class="nav-tabs-container tabs-nav">
+        <button class="nav-tab-btn tab-btn active" data-tab="tabMatchday" onclick="switchTab('tabMatchday')">
+          🏟️ Thi Đấu & Hoạt Động
+        </button>
+        <button class="nav-tab-btn tab-btn" data-tab="tabLifestyle" onclick="switchTab('tabLifestyle')">
+          🛍️ Mua Sắm & Đầu Tư
+        </button>
+        <button class="nav-tab-btn tab-btn" data-tab="tabRecords" onclick="switchTab('tabRecords')">
+          📊 Săn Kỷ Lục Lịch Sử
+        </button>
+        <button class="nav-tab-btn tab-btn" data-tab="tabTraits" onclick="switchTab('tabTraits')">
+          🌟 Tuyệt Kỹ Cá Nhân
+        </button>
+        <button class="nav-tab-btn tab-btn" data-tab="tabContracts" onclick="switchTab('tabContracts')">
+          🤝 Hợp Đồng & Đại Diện
+        </button>
+        <button class="nav-tab-btn tab-btn" data-tab="tabChronicle" onclick="switchTab('tabChronicle')">
+          📜 Nhật Ký Sự Nghiệp
+        </button>
+        <button class="nav-tab-btn tab-btn" id="btnOpenTransferMarket" onclick="openTransferMarketModal()">
+          ✈️ Thị Trường Chuyển Nhượng
+        </button>
+      </div>
+
+      <!-- TAB 1: MATCHDAY & ACTIONS -->
+      <div id="tabMatchday" class="tab-content-panel active">
+        
+        <!-- Multi-Tier Competition System Widget -->
+        <div id="competitionTierWidgetBox" style="margin-bottom: 14px;">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- MATCHDAY CENTER HUB (LỊCH THI ĐẤU & MÔ PHỎNG TỪNG TRẬN)         -->
+        <!-- ============================================================= -->
+        <div id="matchdayCenterHub">
+          <!-- 1. BANNER TRẬN ĐẤU SẮP TỚI (UPCOMING MATCH BANNER) -->
+          <div class="card matchday-banner-card" id="matchdayBannerCard">
+            <!-- Header: Tourney badge, Round, Stadium, Derby/Big Match flame -->
+            <div class="match-banner-header">
+              <div class="match-banner-meta">
+                <span class="comp-badge" id="bannerCompBadge">🏆 Premier League</span>
+                <span class="round-badge" id="bannerRoundBadge">Vòng 1/38</span>
+                <span class="stadium-badge" id="bannerStadiumBadge">🏟️ Sân Vận Động</span>
+              </div>
+              <div class="match-banner-tags" id="bannerTagsContainer">
+                <!-- e.g. 🔥 DERBY NẢY LỬA or ⚔️ ĐẠI CHIẾN TOP 4 -->
+              </div>
+            </div>
+
+            <!-- VS Clash Hero Display -->
+            <div class="match-clash-hero">
+              <!-- Home Club -->
+              <div class="clash-club clash-home">
+                <div class="clash-club-icon" id="bannerHomeIcon">👑</div>
+                <div class="clash-club-info">
+                  <div class="clash-club-name" id="bannerHomeName">Đội Nhà</div>
+                  <div class="clash-club-rank" id="bannerHomeRank">Hạng #1</div>
+                </div>
+                <div class="clash-form-pills" id="bannerHomeForm">
+                  <!-- Form pills -->
+                </div>
+              </div>
+
+              <!-- VS Badge / Center info -->
+              <div class="clash-center-box">
+                <div class="clash-vs-badge" id="bannerVsBadge">VS</div>
+                <div class="clash-difficulty" id="bannerDifficultyBadge">Độ khó: ★★★★☆</div>
+              </div>
+
+              <!-- Away Club -->
+              <div class="clash-club clash-away">
+                <div class="clash-form-pills" id="bannerAwayForm">
+                  <!-- Form pills -->
+                </div>
+                <div class="clash-club-info" style="text-align:right;">
+                  <div class="clash-club-name" id="bannerAwayName">Đội Khách</div>
+                  <div class="clash-club-rank" id="bannerAwayRank">Hạng #2</div>
+                </div>
+                <div class="clash-club-icon" id="bannerAwayIcon">🔴</div>
+              </div>
+            </div>
+
+            <!-- Opponent Scouting Insight Bar -->
+            <div class="clash-scouting-bar" id="bannerScoutingBar">
+              <span class="scout-item">⚔️ Công: <strong id="scoutAtt">--</strong></span>
+              <span class="scout-item">⚡ Tuyến giữa: <strong id="scoutMid">--</strong></span>
+              <span class="scout-item">🛡️ Thủ: <strong id="scoutDef">--</strong></span>
+              <span class="scout-item" style="color:var(--accent-gold);">⭐ Nhận định: <span id="scoutDesc">Đang cập nhật...</span></span>
+            </div>
+
+            <!-- Pre-match Tactical & Fitness Preparation Strip -->
+            <div class="clash-prep-strip">
+              <!-- Tactic Selection (5 Chiến Thuật) -->
+              <div class="prep-group">
+                <span class="prep-label">⚔️ Chiến Thuật:</span>
+                <div class="tactic-buttons-row">
+                  <button class="tactic-pill" data-tactic="ATTACKING" title="⚔️ Tấn Công Áp Đặt: +6 Rating, +15% Bàn/Kiến tạo, Thể lực x1.30, Thủ x0.80">⚔️ Tấn Công Áp Đặt</button>
+                  <button class="tactic-pill" data-tactic="GEGENPRESSING" title="🔥 Gegenpressing: +9 Rating, +25% Bàn/Kiến tạo, +30% Tắc bóng, Thể lực x1.45">🔥 Gegenpressing</button>
+                  <button class="tactic-pill active" data-tactic="BALANCED" title="⚖️ Cân Bằng: Giữ thế trận ổn định, không thay đổi chỉ số">⚖️ Cân Bằng</button>
+                  <button class="tactic-pill" data-tactic="DEFENSIVE_COUNTER" title="🛡️ Phản Công Nhanh: -3 Rating, +35% Giữ sạch lưới, Thể lực x0.70">🛡️ Phản Công Nhanh</button>
+                  <button class="tactic-pill" data-tactic="PARK_THE_BUS" title="🚌 Dựng Xe Buýt: -6 Rating, +60% Giữ sạch lưới, Thể lực x0.55">🚌 Dựng Xe Buýt</button>
+                </div>
+              </div>
+
+              <!-- Fitness / Pre-Match Preparation (4 Phương Án) -->
+              <div class="prep-group">
+                <span class="prep-label">⚡ Chuẩn Bị:</span>
+                <div class="prep-buttons-row">
+                  <button class="btn-prep" id="btnPrepRest" data-prep="REST" title="Nghỉ ngơi dưỡng sức: Hồi phục +28% Thể lực (Tối đa 100%)">🛏️ Dưỡng Sức (+28% Stam)</button>
+                  <button class="btn-prep" id="btnPrepVideo" data-prep="VIDEO_ANALYSIS" title="Phân tích băng hình đối thủ: Không tốn thể lực, +0.3 Match Rating, tăng sắc bén tick">📹 Soi Băng Hình (+0.3 Rating)</button>
+                  <button class="btn-prep" id="btnPrepTrain" data-prep="LIGHT_TRAIN" title="Khởi động làm nóng người: +10 Phong độ, tiêu hao 8% Thể lực">🏃 Khởi Động (+10 Form)</button>
+                  <button class="btn-prep" id="btnPrepIntense" data-prep="INTENSE_DRILL" title="Tập chuyên sâu cường độ cao: +20 Phong độ, +15 Tinh thần, tiêu hao 18% Thể lực">🎯 Tập Nặng (+20 Form, -18% Stam)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- INJURY STATUS BADGE -->
+            <div id="injuryStatusBadge" style="display: none; margin: 10px 0; padding: 10px 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px; color: #ef4444; font-size: 0.83rem; font-weight: 700;">
+              🚑 <span id="injuryStatusText">Đang chấn thương</span>
+              <button class="btn btn-secondary" id="btnActionRehab" style="margin-left: 10px; padding: 4px 10px; font-size: 0.75rem; background: rgba(239,68,68,0.2);">🩹 Điều Trị / Rehab</button>
+            </div>
+
+            <!-- Matchday Primary Action Buttons -->
+            <div class="match-actions-row">
+              <button class="btn-play-match-primary" id="btnPlayMatchInteractive">
+                <span class="play-icon">⚽</span>
+                <span class="play-text">
+                  <strong>RA SÂN THI ĐẤU (MATCH ARENA)</strong>
+                  <small>Tick-based 90 phút • Live Rating • Bàn kỳ vọng xG</small>
+                </span>
+              </button>
+
+              <button class="btn-quick-sim-match" id="btnQuickSimMatch">
+                ⚡ Mô Phỏng Nhanh (Quick Sim)
+              </button>
+
+              <button class="btn-quick-sim-multi" id="btnQuickSim5Matches">
+                ⏩ Mô Phỏng 5 Vòng Tiếp
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. GRID 2 CỘT: BẢNG XẾP HẠNG TRỰC TIẾP & TOP SCORERS / LỊCH ĐẤU -->
+          <div class="matchday-grid-two-col">
+            <!-- Cột Trái: Bảng Xếp Hạng Trực Tiếp -->
+            <div class="card league-table-card">
+              <div class="section-title">
+                <div class="section-title-left">
+                  <span class="dot" style="background: var(--accent-gold);"></span>
+                  <span id="leagueTableTitle">Bảng Xếp Hạng Giải Đấu Trực Tiếp</span>
+                </div>
+                <!-- Filter Tabs: League vs Continental -->
+                <div class="league-filter-pills" id="leagueFilterPills" style="display: flex; gap: 6px;">
+                  <button class="league-filter-btn active" id="btnFilterLeague" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 700; border-radius: 6px; cursor: pointer;">🏆 Giải VĐQG</button>
+                  <button class="league-filter-btn" id="btnFilterContinental" style="padding: 4px 10px; font-size: 0.76rem; font-weight: 700; border-radius: 6px; cursor: pointer;">⭐ Cúp C1/C2 Châu Âu</button>
+                </div>
+              </div>
+
+              <div class="league-table-scroll" id="liveLeagueTableContainer">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+
+            <!-- Cột Phải: Sub-tabs Vua Phá Lưới & Lịch Thi Đấu & Sơ Đồ Cúp -->
+            <div class="card matchday-side-card">
+              <div class="side-tab-headers">
+                <button class="side-tab-btn active" id="btnTabTopScorers">
+                  👟 Vua Phá Lưới
+                </button>
+                <button class="side-tab-btn" id="btnTabFixturesList">
+                  🗓️ Lịch Thi Đấu
+                </button>
+                <button class="side-tab-btn" id="btnTabBrackets">
+                  🌿 Sơ Đồ Cúp
+                </button>
+              </div>
+
+              <!-- Container 1: Cuộc đua Vua Phá Lưới -->
+              <div class="side-tab-panel active" id="sidePanelScorers">
+                <div id="topScorersContainer">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+
+              <!-- Container 2: Danh sách Lịch thi đấu -->
+              <div class="side-tab-panel" id="sidePanelFixtures" style="display:none;">
+                <div class="fixtures-scroll-list" id="fixturesListContainer">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+
+              <!-- Container 3: Sơ Đồ Phân Nhánh Cúp (Tournament Brackets) -->
+              <div class="side-tab-panel" id="sidePanelBrackets" style="display:none;">
+                <div id="tournamentBracketsContainer" class="tournament-brackets-scroll">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Live Individual Power Rankings & Golden Shoe Tracker -->
+        <div class="card" style="margin-top: 4px;">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-gold);"></span>
+              <span>Cuộc Đua Danh Hiệu Cá Nhân Thời Gian Thực (Live Individual Tracker)</span>
+            </div>
+            <span style="font-size:0.8rem; color:var(--accent-gold); font-weight:800;">Cập nhật sau mỗi Chặng</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 4px;">
+            <!-- Golden Shoe Card -->
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: var(--accent-gold); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span>👟 Chiếc Giày Vàng Châu Âu (Golden Shoe)</span>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Hệ số x2.0</span>
+              </div>
+              <div id="liveGoldenShoeList">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+
+            <!-- Ballon d'Or Power Ranking Card -->
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: var(--accent-purple); display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span>👑 Top 5 Quả Bóng Vàng (Ballon d'Or Power Rankings)</span>
+                <span style="font-size:0.75rem; color:var(--accent-green);">Live ⚡</span>
+              </div>
+              <div id="liveBallonDorList">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Career Timeline & Log -->
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-blue);"></span>
+              <span>Nhật Ký Sự Nghiệp & Đấu Trường Đa Cấp Độ</span>
+            </div>
+          </div>
+
+          <div class="timeline-container" id="careerLog">
+            <!-- Timeline entries rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: LIFESTYLE, EQUIPMENT & INVESTMENTS -->
+      <div id="tabLifestyle" class="tab-content-panel">
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-gold);"></span>
+              <span>Cửa Hàng Trang Bị, Dịch Vụ & Bất Động Sản</span>
+            </div>
+          </div>
+
+          <!-- Section A: Equipment (One-time purchase) -->
+          <div class="lifestyle-section-title">👟 Dụng Cụ & Trang Thiết Bị Thi Đấu (Equipment)</div>
+          <div class="lifestyle-list" id="lifestyleEquipContainer">
+            <!-- Rendered via JS -->
+          </div>
+
+          <!-- Section B: Subscriptions (Recurring Monthly) -->
+          <div class="lifestyle-section-title" style="margin-top: 20px;">🛡️ Dịch Vụ & HLV Cá Nhân (Monthly Subscriptions)</div>
+          <div class="lifestyle-list" id="lifestyleSubsContainer">
+            <!-- Rendered via JS -->
+          </div>
+
+          <!-- Section C: Assets (Real Estate & Luxury) -->
+          <div class="lifestyle-section-title" style="margin-top: 20px;">🏰 Bất Động Sản & Siêu Xe (Capital Assets)</div>
+          <div class="lifestyle-list" id="lifestyleAssetsContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ALL-TIME RECORDS TRACKING -->
+      <div id="tabRecords" class="tab-content-panel">
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-purple);"></span>
+              <span>Bảng Săn Kỷ Lục Bóng Đá Mọi Thời Đại (All-Time Records)</span>
+            </div>
+            <span style="font-size: 0.82rem; color: var(--accent-gold); font-weight: 800;" id="recordsBrokenCountBadge">0/8 Kỷ Lục Đã Chinh Phục</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Thách thức các cột mốc vĩ đại nhất trong lịch sử bóng đá thế giới của Pele, Maradona, Messi và Cristiano Ronaldo. Khi phá vỡ kỷ lục, tên tuổi của bạn sẽ được vinh danh và khắc ghi vĩnh viễn vào ngôi đền huyền thoại!
+          </p>
+
+          <div class="records-grid" id="recordsListContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: SIGNATURE TRAITS & SKILL TREE -->
+      <div id="tabTraits" class="tab-content-panel">
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-gold);"></span>
+              <span>Hệ Thống Cây Tuyệt Kỹ Cá Nhân (Signature Traits)</span>
+            </div>
+            <span style="font-size: 0.82rem; color: var(--accent-gold); font-weight: 800;" id="traitsUnlockedCountBadge">0/6 Tuyệt Kỹ Đã Mở Khóa</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Mở khóa các tuyệt kỹ siêu sao đỉnh cao khi bạn chinh phục các cột mốc bàn thắng, cúp vô địch và danh tiếng. Các kỹ năng này sẽ tự động gia tăng trực tiếp sức mạnh và tỷ lệ chiến thắng trong các trận Đại Chiến Derby và Chung Kết Cúp Châu Âu!
+          </p>
+
+          <div class="records-grid" id="traitsListContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: AGENTS & BRAND SPONSORSHIPS -->
+      <div id="tabContracts" class="tab-content-panel">
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-green);"></span>
+              <span>Hợp Đồng Đại Diện & Đàm Phán Tài Trợ Thương Hiệu</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Thuê Siêu Cò đại diện quyền lực để đàm phán mức lương khủng và ký kết các hợp đồng tài trợ giày/áo đấu triệu đô từ Nike, Adidas, Puma, Jordan!
+          </p>
+
+          <!-- Section 0: Current Club Contract -->
+          <div class="lifestyle-section-title">📄 Hợp Đồng Thi Đấu Câu Lạc Bộ (Club Contract)</div>
+          <div id="clubContractCardContainer" style="margin-bottom: 24px;">
+            <!-- Rendered via JS -->
+          </div>
+
+          <!-- Section 1: Player Agents -->
+          <div class="lifestyle-section-title">🤝 Người Đại Diện Cầu Thủ (Agents)</div>
+          <div class="lifestyle-list" id="agentsListContainer" style="margin-bottom: 24px;">
+            <!-- Rendered via JS -->
+          </div>
+
+          <!-- Section 2: Brand Sponsorship Deals -->
+          <div class="lifestyle-section-title">👟 Hợp Đồng Tài Trợ Thương Hiệu (Brand Sponsorships)</div>
+          <div class="lifestyle-list" id="sponsorshipsListContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: CAREER CHRONICLE (NHẬT KÝ SỰ NGHIỆP & CỘT MỐC) -->
+      <div id="tabChronicle" class="tab-content-panel">
+        <div class="card">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-gold);"></span>
+              <span>Dòng Thời Gian Sự Nghiệp (Career Chronicle)</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Ghi nhận toàn bộ các mốc son chói lọi, siêu phẩm định đoạt, danh hiệu vô địch và các cột mốc lịch sử trong sự nghiệp quần đùi áo số của bạn.
+          </p>
+
+          <div id="careerChronicleContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. RETIREMENT & HALL OF FAME SCREEN        -->
+    <!-- ========================================== -->
+    <div id="screenEnd" class="view-screen">
+      <div class="card">
+        <div class="legacy-banner">
+          <div style="font-size: 3.2rem;">👑</div>
+          <div class="legacy-rank" id="endLegacyRank">VĨ ĐẠI NHẤT LỊCH SỬ (G.O.A.T)</div>
+          <div class="legacy-desc" id="endLegacyDesc">
+            Bạn đã kết thúc một sự nghiệp bóng đá huyền thoại, chạm tới mọi đỉnh cao danh vọng!
+          </div>
+        </div>
+
+        <!-- Milestones Hall of Fame Banner (Kỷ Lục Gia Vĩ Đại) -->
+        <div class="milestones-hall-banner">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="font-weight:900; font-size:1rem; color:var(--accent-gold); display:flex; align-items:center; gap:8px;">
+              <span>🏛️ ĐỀN THỜ KỶ LỤC LỊCH SỬ & CỘT MỐC HUYỀN THOẠI</span>
+            </div>
+            <div id="milestoneLegendBadge" style="display:none; background:rgba(245,158,11,0.25); border:1px solid rgba(245,158,11,0.6); color:var(--accent-gold); padding:4px 12px; border-radius:20px; font-weight:900; font-size:0.8rem;">
+              🏅 KỶ LỤC GIA VĨ ĐẠI
+            </div>
+          </div>
+          <div class="milestones-grid" id="endMilestonesGrid">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Modern Glassmorphism Dashboard Grid -->
+        <div class="end-dashboard-grid">
+          
+          <!-- Card 1: Trophies -->
+          <div class="end-stat-card end-card-gold">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🏆</span>
+              <span class="end-stat-badge">CLB & ĐTQG</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endTrophies">0 🏆</div>
+              <div class="end-stat-lbl">Tổng Danh Hiệu</div>
+            </div>
+            <div class="end-stat-sub" id="endTrophiesSub">Tối đa 60-90 cúp sự nghiệp</div>
+          </div>
+
+          <!-- Card 2: Ballon d'Or -->
+          <div class="end-stat-card end-card-gold">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">👑</span>
+              <span class="end-stat-badge">Cá Nhân</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endBallonDorWins">0</div>
+              <div class="end-stat-lbl">Quả Bóng Vàng</div>
+            </div>
+            <div class="end-stat-sub">Top 1 Thế Giới</div>
+          </div>
+
+          <!-- Card 3: Top 3 Ballon d'Or -->
+          <div class="end-stat-card end-card-gold">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🥈</span>
+              <span class="end-stat-badge">Bục Vinh Quang</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endBallonDorTop3">0</div>
+              <div class="end-stat-lbl">Top 3 Thế Giới</div>
+            </div>
+            <div class="end-stat-sub">Top 30: <span id="endBallonDorTop30">0</span> lần</div>
+          </div>
+
+          <!-- Card 4: Career Goals -->
+          <div class="end-stat-card end-card-cyan">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">⚽</span>
+              <span class="end-stat-badge">Bàn Thắng</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endStat1Val">0</div>
+              <div class="end-stat-lbl" id="endStat1Lbl">Tổng Bàn Thắng</div>
+            </div>
+            <div class="end-stat-sub">Đấu trường chính thức</div>
+          </div>
+
+          <!-- Card 5: Career Assists / Saves -->
+          <div class="end-stat-card end-card-purple">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🎯</span>
+              <span class="end-stat-badge">Đóng Góp</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endStat2Val">0</div>
+              <div class="end-stat-lbl" id="endStat2Lbl">Tổng Kiến Tạo</div>
+            </div>
+            <div class="end-stat-sub">Chuyền bóng & Dọn cỗ</div>
+          </div>
+
+          <!-- Card 6: UCL Goals -->
+          <div class="end-stat-card end-card-cyan">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">⭐</span>
+              <span class="end-stat-badge">Champions League</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endUclGoals">0</div>
+              <div class="end-stat-lbl">Bàn Thắng Cúp C1</div>
+            </div>
+            <div class="end-stat-sub">Đỉnh cao Châu Âu</div>
+          </div>
+
+          <!-- Card 7: Net Worth -->
+          <div class="end-stat-card end-card-green">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">💰</span>
+              <span class="end-stat-badge">Tài Sản</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endNetWorth">$0</div>
+              <div class="end-stat-lbl">Tài Sản Tích Lũy</div>
+            </div>
+            <div class="end-stat-sub">Tiền mặt + Bất động sản</div>
+          </div>
+
+          <!-- Card 8: Peak Market Value -->
+          <div class="end-stat-card end-card-green">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">💶</span>
+              <span class="end-stat-badge">Transfermarkt</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endPeakMarketVal">€0</div>
+              <div class="end-stat-lbl">Định Giá Đỉnh Cao</div>
+            </div>
+            <div class="end-stat-sub">Mức giá kỷ lục đạt được</div>
+          </div>
+
+          <!-- Card 9: International Caps -->
+          <div class="end-stat-card end-card-red">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🚩</span>
+              <span class="end-stat-badge">ĐTQG</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endIntlCaps">0</div>
+              <div class="end-stat-lbl">Số Trận ĐTQG</div>
+            </div>
+            <div class="end-stat-sub">Vinh quang tổ quốc</div>
+          </div>
+
+          <!-- Card 10: International Goals / Clean Sheets -->
+          <div class="end-stat-card end-card-red">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🌍</span>
+              <span class="end-stat-badge">ĐTQG</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endIntlStatsVal">0</div>
+              <div class="end-stat-lbl" id="endIntlStatsLbl">Bàn Thắng ĐTQG</div>
+            </div>
+            <div class="end-stat-sub">World Cup & Châu lục</div>
+          </div>
+
+          <!-- Card 11: Total Matches -->
+          <div class="end-stat-card end-card-blue">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🏟️</span>
+              <span class="end-stat-badge">Sự Nghiệp</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endTotalMatches">0</div>
+              <div class="end-stat-lbl">Tổng Số Trận Đấu</div>
+            </div>
+            <div class="end-stat-sub">Độ bền bỉ đỉnh cao</div>
+          </div>
+
+          <!-- Card 12: Retirement Age -->
+          <div class="end-stat-card end-card-blue">
+            <div class="end-stat-top">
+              <span class="end-stat-icon">🗓️</span>
+              <span class="end-stat-badge">Thời Gian</span>
+            </div>
+            <div>
+              <div class="end-stat-val" id="endAge">36</div>
+              <div class="end-stat-lbl">Tuổi Giải Nghệ</div>
+            </div>
+            <div class="end-stat-sub">Hành trình 20 năm</div>
+          </div>
+
+        </div>
+
+        <!-- Post-Retirement Career Paths (Ngã Rẽ Sự Nghiệp Hậu Giải Nghệ) -->
+        <div class="career-paths-section">
+          <div class="section-title">
+            <div class="section-title-left">
+              <span class="dot" style="background: var(--accent-gold);"></span>
+              <span>Lựa Chọn Ngã Rẽ Sự Nghiệp Hậu Giải Nghệ (Post-Retirement Paths)</span>
+            </div>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted);">
+            Sau khi treo giày, danh tiếng và khối tài sản đồ sộ mở ra cho bạn những chân trời mới. Hãy chọn con đường bạn muốn dấn thân:
+          </p>
+          <div class="career-path-grid">
+            <div class="career-path-card" id="pathManager" onclick="selectPostRetirementPath('MANAGER')">
+              <div class="career-path-icon">👔</div>
+              <div class="career-path-title">Huấn Luyện Viên Trưởng (Manager)</div>
+              <div class="career-path-desc">
+                Bắt đầu sự nghiệp cầm quân, dẫn dắt các câu lạc bộ hàng đầu châu Âu chinh phục Champions League.
+              </div>
+            </div>
+
+            <div class="career-path-card" id="pathPundit" onclick="selectPostRetirementPath('PUNDIT')">
+              <div class="career-path-icon">🎙️</div>
+              <div class="career-path-title">Chuyên Gia Truyền Hình (Pundit)</div>
+              <div class="career-path-desc">
+                Ký hợp đồng triệu đô với đài truyền hình quốc tế Sky Sports & BBC, trở thành gương mặt bình luận có tầm ảnh hưởng nhất.
+              </div>
+            </div>
+
+            <div class="career-path-card" id="pathOwner" onclick="selectPostRetirementPath('OWNER')">
+              <div class="career-path-icon">👑</div>
+              <div class="career-path-title">Chủ Tịch / Đồng Sở Hữu CLB (Club Owner)</div>
+              <div class="career-path-desc">
+                Dùng khối tài sản ròng tích lũy mua lại cổ phần chi phối 1 câu lạc bộ bóng đá chuyên nghiệp để kiến tạo đế chế.
+              </div>
+            </div>
+          </div>
+
+          <div id="postCareerCertificate" style="display:none;" class="career-certificate-box">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- All-Time GOAT Leaderboard Table -->
+        <div class="trophy-breakdown-section" style="margin-top: 20px;">
+          <div class="trophy-breakdown-title">
+            <span>🐐 Bảng Xếp Hạng Huyền Thoại Vĩ Đại Mọi Thời Đại (G.O.A.T Table)</span>
+          </div>
+          <div class="goat-table-wrapper">
+            <table class="goat-table">
+              <thead>
+                <tr>
+                  <th>Hạng</th>
+                  <th>Huyền Thoại</th>
+                  <th>Bàn Thắng</th>
+                  <th>Cúp C1</th>
+                  <th>World Cup</th>
+                  <th>Quả Bóng Vàng</th>
+                  <th>Điểm GOAT</th>
+                </tr>
+              </thead>
+              <tbody id="goatLeaderboardBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Broken Records in Retirement -->
+        <div class="trophy-breakdown-section">
+          <div class="trophy-breakdown-title" style="color:var(--accent-purple);">
+            <span>🏅 Kỷ Lục Lịch Sử Đã Phá Vỡ Trong Sự Nghiệp (Broken Records)</span>
+          </div>
+          <div class="records-grid" id="endRecordsList">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Trophy Breakdown -->
+        <div class="trophy-breakdown-section">
+          <div class="trophy-breakdown-title">
+            <span>🏆 Chi Tiết Các Danh Hiệu Đã Đạt Được</span>
+          </div>
+          <div class="trophy-breakdown-grid" id="endTrophyBreakdown">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Portfolio Assets Breakdown in Retirement -->
+        <div class="trophy-breakdown-section">
+          <div class="trophy-breakdown-title" style="color:var(--accent-blue);">
+            <span>🏢 Danh Mục Trang Bị & Tài Sản Sở Hữu</span>
+          </div>
+          <div class="club-history-list" id="endPortfolioList">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Clubs History -->
+        <div class="trophy-breakdown-section">
+          <div class="trophy-breakdown-title" style="color:var(--accent-blue);">
+            <span>🛡️ Lịch Sử Các Câu Lạc Bộ Đã Thi Đấu</span>
+          </div>
+          <div class="club-history-list" id="endClubsList">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="restartGame()" style="margin-top: 10px;">
+          🔄 Bắt Đầu Một Sự Nghiệp Mới
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: MULTI-SLOT SAVE MANAGER (5 SLOTS)   -->
+  <!-- ========================================== -->
+  <div id="modalSaveSlots" class="modal-overlay">
+    <div class="modal-content" style="max-width: 680px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="modal-badge badge-event">💾 QUẢN LÝ 5 Ô LƯU TRỮ (SAVE SLOTS)</div>
+        <button type="button" class="btn-close-modal" onclick="window.closeSaveSlotsModal && closeSaveSlotsModal()" style="background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; padding: 4px 8px;">✕</button>
+      </div>
+      <div class="modal-title" style="color: var(--accent-gold); margin-top: -6px;">Hệ Thống Lưu & Tải Đa Sự Nghiệp</div>
+      <div class="modal-desc" style="margin-top: -8px;">Chọn một ô lưu để tiếp tục hành trình đỉnh cao hoặc khởi tạo sự nghiệp mới tại ô lưu mong muốn.</div>
+
+      <div class="save-slots-list" id="saveSlotsModalList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+        <button class="btn btn-secondary" onclick="window.closeSaveSlotsModal && closeSaveSlotsModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: OVERWRITE CONFIRMATION WARNING      -->
+  <!-- ========================================== -->
+  <div id="modalOverwriteWarning" class="modal-overlay">
+    <div class="modal-content modal-overwrite-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="modal-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45);">
+          ⚠️ CẢNH BÁO NGUY HIỂM
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCancelOverwriteX" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; padding: 4px 8px;" title="Đóng modal">✕</button>
+      </div>
+
+      <div class="modal-title" style="color: #ef4444; margin-top: -4px; display: flex; align-items: center; gap: 8px;">
+        <span>⚠️ CẢNH BÁO GHI ĐÈ SỰ NGHIỆP</span>
+      </div>
+
+      <div class="modal-desc" style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+        Hành động này sẽ <strong style="color: #f87171; text-decoration: underline;">XÓA VĨNH VIỄN</strong> sự nghiệp cũ trên <span id="overwriteSlotNumText" style="color: var(--accent-gold); font-weight: 800;">Slot 1</span> và không thể hoàn tác. Bạn có chắc chắn muốn ghi đè?
+      </div>
+
+      <!-- Thông tin sự nghiệp cũ sẽ bị xóa -->
+      <div class="overwrite-old-career-box">
+        <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; color: #fca5a5; margin-bottom: 10px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+          <span>📋 DỮ LIỆU SỰ NGHIỆP SẼ BỊ XÓA BỎ:</span>
+        </div>
+        <div class="overwrite-meta-grid">
+          <div class="overwrite-meta-item">
+            <span class="overwrite-meta-label">Cầu thủ:</span>
+            <span class="overwrite-meta-val" id="overwriteOldName" style="color: #fff;">---</span>
+          </div>
+          <div class="overwrite-meta-item">
+            <span class="overwrite-meta-label">CLB / Học viện:</span>
+            <span class="overwrite-meta-val" id="overwriteOldClub" style="color: #38bdf8;">---</span>
+          </div>
+          <div class="overwrite-meta-item">
+            <span class="overwrite-meta-label">Độ tuổi:</span>
+            <span class="overwrite-meta-val" id="overwriteOldAge" style="color: #facc15;">---</span>
+          </div>
+          <div class="overwrite-meta-item">
+            <span class="overwrite-meta-label">Mùa giải:</span>
+            <span class="overwrite-meta-val" id="overwriteOldSeason" style="color: #4ade80;">---</span>
+          </div>
+          <div class="overwrite-meta-item" style="grid-column: span 2;">
+            <span class="overwrite-meta-label">Thời gian lưu gần nhất:</span>
+            <span class="overwrite-meta-val" id="overwriteOldSavedAt" style="color: #cbd5e1; font-size: 0.85rem; font-weight: 600;">---</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; gap: 12px; margin-top: 6px;">
+        <button type="button" class="btn btn-overwrite-cancel" id="btnCancelOverwrite" style="flex: 1; padding: 12px 14px; font-size: 0.9rem; font-weight: 700; border-radius: 8px;">
+          ❌ HỦY BỎ / CHỌN SLOT KHÁC
+        </button>
+        <button type="button" class="btn btn-overwrite-confirm" id="btnConfirmOverwrite" style="flex: 1; padding: 12px 14px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer;">
+          ⚠️ XÁC NHẬN GHI ĐÈ &amp; BẮT ĐẦU
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: KEY MATCH MOMENT CHOICES            -->
+  <!-- ========================================== -->
+  <div id="keyMatchModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-badge badge-match-moment" id="keyMatchBadge">⚡ BƯỚC NGOẶT TRẬN ĐẤU LỚN</div>
+      <div class="modal-title" id="keyMatchTitle" style="color:var(--accent-gold);">Tiêu Đề Trận Đấu</div>
+      <div class="modal-desc" id="keyMatchDesc" style="font-size:0.92rem; line-height:1.6;">Tình huống trận đấu...</div>
+      <div class="modal-choices" id="keyMatchChoices">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: MATCH CENTER (INTERACTIVE BIG MATCH)-->
+  <!-- ========================================== -->
+  <div id="matchCenterModal" class="modal-overlay">
+    <div class="modal-content match-center-content">
+      
+      <!-- Stadium & Tournament Header -->
+      <div class="mc-header">
+        <div class="modal-badge badge-match-moment" id="mcTourneyBadge">🏆 UEFA CHAMPIONS LEAGUE FINAL</div>
+        <div class="mc-stadium-info" id="mcStadiumInfo">🏟️ Santiago Bernabéu — 84,744 Khán Giả</div>
+      </div>
+
+      <!-- Live Match HUD Bar: Rating, Stamina, xG -->
+      <div class="mc-hud-bar">
+        <div class="mc-hud-item mc-hud-rating">
+          <span class="mc-hud-label">⭐ ĐIỂM SỐ LIVE:</span>
+          <span class="mc-hud-val rating-normal" id="mcLiveRatingVal">6.0</span>
+        </div>
+        <div class="mc-hud-item mc-hud-stamina">
+          <span class="mc-hud-label">⚡ THỂ LỰC:</span>
+          <span class="mc-hud-val" id="mcInMatchStaminaVal">80%</span>
+        </div>
+        <div class="mc-hud-item mc-hud-xg">
+          <span class="mc-hud-label">📊 BÀN THẮNG KỲ VỌNG (xG):</span>
+          <span class="mc-hud-val" id="mcXgDuelVal"><span id="mcHomeXGVal">0.00</span> - <span id="mcAwayXGVal">0.00</span></span>
+        </div>
+      </div>
+
+      <!-- Live Scoreboard Arena -->
+      <div class="mc-scoreboard">
+        <div class="mc-team mc-home">
+          <div class="mc-team-logo" id="mcHomeLogo">🔴</div>
+          <div class="mc-team-name" id="mcHomeName">Real Madrid</div>
+        </div>
+
+        <div class="mc-score-center">
+          <div class="mc-score-display">
+            <span id="mcHomeScore">0</span>
+            <span class="mc-score-divider">-</span>
+            <span id="mcAwayScore">0</span>
+          </div>
+          <div class="mc-time-badge" id="mcTimeBadge">⏱️ Phút 1'</div>
+          <div class="mc-status-tag" id="mcStatusTag">⚡ Đang Tranh Tài</div>
+        </div>
+
+        <div class="mc-team mc-away">
+          <div class="mc-team-logo" id="mcAwayLogo">🔵🔴</div>
+          <div class="mc-team-name" id="mcAwayName">FC Barcelona</div>
+        </div>
+      </div>
+
+      <!-- ⚽ 2D Radar Pitch Visual (Mini Football Pitch Map) -->
+      <div class="mc-radar-wrap">
+        <div class="mc-radar-pitch" id="mcRadarPitch">
+          <!-- Pitch markings rendered by CSS -->
+          <!-- Vạch kẻ sân: 2 penalty areas, center circle, halfway line -->
+          <div class="radar-halfway-line"></div>
+          <div class="radar-center-circle"></div>
+          <div class="radar-center-dot"></div>
+          <div class="radar-penalty-left"></div>
+          <div class="radar-penalty-right"></div>
+          <div class="radar-penalty-spot-left"></div>
+          <div class="radar-penalty-spot-right"></div>
+          <!-- Dynamic dots: Ball, Player, Opponents, Teammate -->
+          <div class="radar-dot radar-dot-ball" id="radarBall">⚽</div>
+          <div class="radar-dot radar-dot-player" id="radarPlayer" title="Bạn"></div>
+          <div class="radar-dot radar-dot-opponent" id="radarOpp1"></div>
+          <div class="radar-dot radar-dot-opponent" id="radarOpp2"></div>
+          <div class="radar-dot radar-dot-teammate" id="radarMate"></div>
+          <!-- Goal Shake Overlay -->
+          <div class="radar-goal-flash" id="radarGoalFlash"></div>
+        </div>
+        <!-- Zone labels -->
+        <div class="radar-zone-labels">
+          <span class="radar-zone-lbl" id="radarLblHome">🏠</span>
+          <span class="radar-zone-lbl-mid">| ½ |</span>
+          <span class="radar-zone-lbl" id="radarLblAway">⚡</span>
+        </div>
+      </div>
+
+      <!-- xG Dual Visual Comparison Strip -->
+      <div class="mc-xg-bar-container">
+        <div class="mc-xg-bar-track">
+          <div class="mc-xg-bar-fill-home" id="mcXgBarHome" style="width: 50%;"></div>
+          <div class="mc-xg-bar-fill-away" id="mcXgBarAway" style="width: 50%;"></div>
+        </div>
+        <div class="mc-xg-bar-labels">
+          <span id="mcXgLabelHome">Home xG: 0.00</span>
+          <span id="mcPlayerXgBadge" class="mc-player-xg-badge">xG Cầu Thủ: 0.00</span>
+          <span id="mcXgLabelAway">Away xG: 0.00</span>
+        </div>
+      </div>
+
+      <!-- Current Match Moment / Situation -->
+      <div class="mc-situation-card" id="mcSituationCard">
+        <div class="mc-situation-title" id="mcMomentTitle">⚡ Phút 35: Pha Phản Công Thần Tốc</div>
+        <div class="mc-situation-desc" id="mcMomentDesc">
+          Bạn nhận đường chọc khe bổng xé toang hàng phòng ngự đối phương và đang băng xuống đối mặt thủ môn! Bạn sẽ đưa ra quyết định gì?
+        </div>
+
+        <div class="mc-choices-grid" id="mcChoicesContainer">
+          <!-- Dynamic action choice buttons rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Live Match Timeline Events Feed (Broadcast Commentary) -->
+      <div class="mc-events-feed" id="mcEventsFeed">
+        <!-- Live broadcast commentary items -->
+      </div>
+
+      <!-- Post Match Analytics & Celebration View -->
+      <div class="mc-post-summary-card" id="mcPostMatchSummary" style="display: none;">
+        <!-- Rendered dynamically upon match completion -->
+      </div>
+
+      <!-- Footer Controls (Skip / Quick Simulate match) -->
+      <div class="mc-footer" id="mcFooterActions">
+        <button class="mc-skip-btn" id="mcBtnSkipMatch">
+          ⚡ Bỏ qua & Mô phỏng nhanh kết quả trận này
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: THỊ TRƯỜNG CHUYỂN NHƯỢNG (TRANSFER MARKET) -->
+  <div class="modal-overlay" id="transferModal">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-badge badge-transfer">✈️ THỊ TRƯỜNG CHUYỂN NHƯỢNG QUỐC TẾ</div>
+      <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Lời Mời Chuyển Nhượng Chính Thức</span>
+        <button class="modal-close-btn" onclick="closeTransferModal()" style="background: none; border: none; font-size: 1.6rem; color: var(--text-muted); cursor: pointer; padding: 0 4px;">&times;</button>
+      </div>
+      <div class="modal-desc" id="transferModalDesc">
+        Dựa trên OVR và định giá thị trường hiện tại của bạn, các câu lạc bộ bóng đá hàng đầu dưới đây đã gửi đề nghị ký hợp đồng chính thức:
+      </div>
+      <div class="transfer-offer-list" id="transferOffersContainer">
+        <!-- Rendered via JS -->
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px;">
+        <button class="btn btn-secondary" onclick="closeTransferModal()" style="padding: 10px 18px; font-weight: 700;">
+          Ở Lại CLB Hiện Tại
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐÀM PHÁN HỢP ĐỒNG CHUYỂN NHƯỢNG (CONTRACT NEGOTIATION MINIGAME) -->
+  <div class="modal-overlay" id="contractNegotiationModal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-badge badge-transfer" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
+        💼 BÀN ĐÀM PHÁN HỢP ĐỒNG CHUYỂN NHƯỢNG
+      </div>
+      <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <span id="negModalClubTitle">CLB Đối Tác — Giám Đốc Thể Thao</span>
+        <span class="round-badge" id="negRoundBadge">Vòng 1/3</span>
+      </div>
+
+      <!-- Patience Meter Bar -->
+      <div style="margin: 14px 0 8px 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 4px;">
+          <span>Lòng kiên nhẫn của Giám đốc thể thao:</span>
+          <span id="negPatienceVal" style="color: var(--accent-green); font-weight: 800;">100%</span>
+        </div>
+        <div class="progress-bar-bg" style="height: 10px; border-radius: 6px; background: rgba(0,0,0,0.4);">
+          <div class="progress-fill" id="negPatienceBar" style="width: 100%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.3s ease, background 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Dialogue Bubble -->
+      <div class="neg-dialogue-box" style="margin: 12px 0; padding: 14px; background: rgba(0,0,0,0.3); border-left: 4px solid var(--accent-blue); border-radius: 8px;">
+        <div style="font-size: 0.78rem; font-weight: 800; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 4px;">
+          👔 Giám Đốc Thể Thao:
+        </div>
+        <div id="negDialogueText" style="font-size: 0.92rem; color: #fff; line-height: 1.5; font-style: italic;">
+          Chào bạn, chúng tôi rất muốn có sự phục vụ của bạn tại đội bóng!
+        </div>
+      </div>
+
+      <!-- Current Offer Sheet -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Mức Lương Đề Xuất (Tuần)</div>
+          <div id="negCurrentSalary" style="font-size: 1.25rem; font-weight: 800; color: var(--accent-green); margin-top: 2px;">€0 / week</div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Phí Lót Tay Ký HĐ</div>
+          <div id="negCurrentBonus" style="font-size: 1.25rem; font-weight: 800; color: var(--accent-gold); margin-top: 2px;">+$0</div>
+        </div>
+      </div>
+
+      <!-- Status Feedback message -->
+      <div id="negStatusMessage" style="min-height: 24px; font-size: 0.88rem; text-align: center; margin-bottom: 12px;"></div>
+
+      <!-- Action Choices Grid -->
+      <div class="neg-actions-grid" style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn btn-secondary" id="btnNegSuperstar" style="padding: 11px 14px; font-weight: 800; border-color: var(--accent-gold); color: var(--accent-gold); text-align: left; display: flex; justify-content: space-between; align-items: center;">
+          <span>👑 1. Yêu sách Lương Siêu Sao (+35% đến +50%)</span>
+          <small style="opacity: 0.8; font-weight: 600;">(Rủi ro cao • -35% Kiên nhẫn nếu tạch)</small>
+        </button>
+
+        <button class="btn btn-secondary" id="btnNegBalanced" style="padding: 11px 14px; font-weight: 800; border-color: var(--accent-blue); color: var(--accent-blue); text-align: left; display: flex; justify-content: space-between; align-items: center;">
+          <span>🤝 2. Đề xuất Cân Bằng Lương & Thưởng (+15% Lương, +25% Thưởng)</span>
+          <small style="opacity: 0.8; font-weight: 600;">(Rủi ro thấp • -15% Kiên nhẫn)</small>
+        </button>
+
+        <button class="btn btn-primary" id="btnNegAccept" style="padding: 12px 14px; font-weight: 800; font-size: 0.98rem; text-align: center; margin-top: 4px;">
+          ✍️ 3. Chấp Nhận & Đặt Bút Ký Hợp Đồng
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+        <button class="btn btn-secondary" onclick="closeContractNegotiationModal()" style="padding: 6px 14px; font-size: 0.8rem;">
+          Hủy Bỏ Đàm Phán
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SỰ KIỆN TÌNH HUỐNG (EVENT MODAL) -->
+  <div class="modal-overlay" id="eventModal">
+    <div class="modal-content">
+      <div class="modal-badge badge-event" id="modalBadge">⚡ SỰ KIỆN BÓNG ĐÁ</div>
+      <div class="modal-title" id="modalTitle">Tiêu Đề Sự Kiện</div>
+      <div class="modal-desc" id="modalDesc">Mô tả sự kiện...</div>
+      <div class="modal-choices-list" id="modalChoices" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+        <!-- Choices rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TỔNG KẾT MÙA GIẢI & LỄ VINH DANH (SEASON SUMMARY MODAL) -->
+  <div class="modal-overlay" id="seasonSummaryModal">
+    <div class="modal-content" style="max-width: 680px; text-align: center;">
+      <div class="modal-badge badge-trophy" id="seasonModalBadge">🏆 TỔNG KẾT MÙA GIẢI & VINH DANH DANH HIỆU</div>
+      <div class="modal-title" id="seasonModalTitle" style="font-size: 1.45rem; color: var(--accent-gold); margin-top: 8px;">
+        Vinh Quang Mùa Giải
+      </div>
+      <div class="modal-desc" id="seasonModalDesc" style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 14px; line-height: 1.5;">
+        <!-- Season narrative -->
+      </div>
+      
+      <!-- Grid Cards of Trophies & Stats -->
+      <div class="season-summary-grid" id="seasonModalGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px;">
+        <!-- Stats cards rendered via JS -->
+      </div>
+
+      <!-- Detailed Breakdown Rows -->
+      <div class="structured-report-box" id="seasonModalRows" style="text-align: left; max-height: 240px; overflow-y: auto; margin-bottom: 16px;">
+        <!-- Report rows -->
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <button class="btn btn-primary" id="btnContinueToNewSeason" style="padding: 12px 32px; font-size: 1.05rem; font-weight: 800; border-radius: 8px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);">
+          🚀 Tiếp Tục Bắt Đầu Mùa Giải Mới ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: HỌP BÁO SAU TRẬN CẦU LỚN (POST-MATCH PRESS CONFERENCE) -->
+  <div class="modal-overlay" id="pressConferenceModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-badge badge-event" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border-color: rgba(168, 85, 247, 0.4);">
+        🎙️ PHÒNG HỌP BÁO TRUYỀN THÔNG (PRESS CONFERENCE)
+      </div>
+      <div class="modal-title" id="pcModalTitle" style="font-size: 1.35rem; color: #fff; margin-top: 6px;">
+        Phỏng Vấn Nóng Sau Trận Đấu
+      </div>
+      <div id="pcMatchContext" style="font-size: 0.82rem; color: var(--accent-gold); font-weight: 700; margin-bottom: 12px;">
+        <!-- Trận đấu context -->
+      </div>
+      
+      <div style="background: rgba(0, 0, 0, 0.35); border-left: 4px solid var(--accent-blue); padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
+        <div id="pcJournalistQuestion" style="font-style: italic; color: #e2e8f0; font-size: 0.9rem; line-height: 1.5;">
+          <!-- Journalist Question -->
+        </div>
+      </div>
+
+      <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+        Chọn Câu Trả Lời Của Bạn:
+      </div>
+
+      <div id="pcChoicesContainer" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Choices rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VÒNG CHUNG KẾT MÙA HÈ (SUMMER TOURNAMENT MODAL) -->
+  <div class="modal-overlay" id="summerTournamentModal">
+    <div class="modal-content" style="max-width: 680px; text-align: center;">
+      <div class="modal-badge badge-trophy" id="stModalBadge">
+        🌍 ĐẤU TRƯỜNG ĐỈNH CAO MÙA HÈ
+      </div>
+      <div class="modal-title" id="stModalTitle" style="font-size: 1.55rem; color: var(--accent-gold); margin-top: 6px;">
+        FIFA World Cup 🏆
+      </div>
+      <div class="modal-desc" id="stModalDesc" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
+        Mùa giải câu lạc bộ đã khép lại! Giờ là lúc bạn khoác lên màu áo Đội Tuyển Quốc Gia bước ra ngày hội bóng đá lớn nhất hành tinh!
+      </div>
+
+      <!-- Current Match Clash Hero in Summer Tournament -->
+      <div id="stMatchClashContainer" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <!-- Clash hero rendered via JS -->
+      </div>
+
+      <!-- Standings / Bracket Snippet -->
+      <div id="stStandingsContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 16px;">
+        <!-- Group Table or Bracket tree -->
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 12px;" id="stActionsContainer">
+        <button class="btn btn-primary" id="btnPlaySummerMatchInteractive" style="padding: 11px 22px; font-weight: 800;">
+          ⚔️ Ra Sân Đá Trực Tiếp
+        </button>
+        <button class="btn btn-secondary" id="btnQuickSimSummerMatch" style="padding: 11px 20px; font-weight: 800;">
+          ⚡ Mô Phỏng Nhanh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐỔI MÙA THẺ (CARD THEMES / EDITIONS PICKER) -->
+  <div class="modal-overlay" id="cardThemeModal">
+    <div class="modal-content" style="max-width: 660px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="modal-badge badge-award" style="background:rgba(234, 179, 8, 0.15); color:#facc15; border:1px solid rgba(234,179,8,0.3);">
+            ✨ BỘ SƯU TẬP MÙA THẺ ULTIMATE TEAM
+          </div>
+          <div class="modal-title" style="margin-top:6px; font-size:1.35rem;">
+            Chọn Phôi Mùa Thẻ Cầu Thủ
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btnCloseThemeModal" style="background:none; border:none; font-size:1.6rem; color:var(--text-muted); cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+      <div class="modal-desc" style="color:var(--text-muted); font-size:0.86rem; margin-top:-6px;">
+        Thay đổi phôi mùa thẻ EA Sports FC của bạn. Các phôi thẻ huyền thoại sẽ tự động mở khóa khi bạn đạt các cột mốc vinh quang trong sự nghiệp!
+      </div>
+
+      <div class="card-themes-grid" id="cardThemesListContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ĐỔI ẢNH ĐẠI DIỆN CẦU THỦ (PLAYER AVATAR PICKER) -->
+  <div class="modal-overlay" id="cardAvatarModal">
+    <div class="modal-content" style="max-width: 660px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div class="modal-badge badge-event" style="background:rgba(56, 189, 248, 0.15); color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.3);">
+            👤 ẢNH ĐẠI DIỆN THẺ CẦU THỦ
+          </div>
+          <div class="modal-title" style="margin-top:6px; font-size:1.35rem;">
+            Chọn Ảnh Đại Diện (Player Render)
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btnCloseAvatarModal" style="background:none; border:none; font-size:1.6rem; color:var(--text-muted); cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+      <div class="modal-desc" style="color:var(--text-muted); font-size:0.86rem; margin-top:-6px;">
+        Chọn 1 trong 10 phong cách minh họa độc quyền hoặc dán trực tiếp đường dẫn (URL) ảnh khuôn mặt/bán thân cắt nền trong suốt (PNG) của bạn.
+      </div>
+
+      <!-- Khối URL Tùy Chọn -->
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+        <div style="font-size:0.82rem; font-weight:800; color:var(--accent-gold); margin-bottom:6px;">🔗 Dán Đường Dẫn Ảnh Tùy Chọn (Custom Image URL):</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="inputCustomAvatarUrl" placeholder="Ví dụ: https://example.com/player_cutout.png" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; color:#fff; font-size:0.82rem;" />
+          <button class="btn btn-primary" id="btnApplyCustomAvatar" style="padding:8px 14px; font-size:0.82rem; white-space:nowrap;">
+            Áp Dụng
+          </button>
+          <button class="btn btn-secondary" id="btnClearCustomAvatar" style="padding:8px 10px; font-size:0.82rem; white-space:nowrap;" title="Xóa và dùng lại avatar mặc định">
+            Xóa URL
+          </button>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:5px;">* Khuyên dùng ảnh định dạng PNG trong suốt (transparent cutout) để hiển thị lộng lẫy nhất trên thẻ.</div>
+      </div>
+
+      <!-- Grid 10 Mẫu Avatar Có Sẵn -->
+      <div>
+        <div style="font-size:0.82rem; font-weight:800; color:var(--text-main); margin-bottom:8px;">🎨 Ngân Hàng 10 Avatar Mặc Định (Click để chọn ngay):</div>
+        <div class="card-avatars-grid" id="cardAvatarsListContainer">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core JavaScript Module -->
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
