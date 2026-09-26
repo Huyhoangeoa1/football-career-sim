@@ -186,7 +186,23 @@ export function renderFcsUltimateCard(player = getPlayer()) {
   let strokeColorMid = isFuture ? '#ec4899' : '#eab308';
   let strokeColorEnd = isFuture ? '#38bdf8' : '#ca8a04';
 
-  if (theme.id === 'totw') {
+  if (theme.id === 'ballon_dor') {
+    strokeColorMain = '#ffd700';
+    strokeColorMid = '#fffbeb';
+    strokeColorEnd = '#d97706';
+  } else if (theme.id === 'treble') {
+    strokeColorMain = '#f8fafc';
+    strokeColorMid = '#94a3b8';
+    strokeColorEnd = '#38bdf8';
+  } else if (theme.id === 'world_champion') {
+    strokeColorMain = '#fbbf24';
+    strokeColorMid = '#fef08a';
+    strokeColorEnd = '#1d4ed8';
+  } else if (theme.id === 'goat_immortal') {
+    strokeColorMain = '#c084fc';
+    strokeColorMid = '#f472b6';
+    strokeColorEnd = '#38bdf8';
+  } else if (theme.id === 'totw') {
     strokeColorMain = '#fef08a';
     strokeColorMid = '#eab308';
     strokeColorEnd = '#854d0e';

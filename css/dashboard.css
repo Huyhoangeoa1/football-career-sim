@@ -2583,6 +2583,182 @@
   color: #ffffff;
 }
 
+/* =========================================================================
+   ULTRA-ENDGAME THEMES (4 PHÔI THẺ SIÊU ĐỈNH CAO CỰC HIẾM)
+   ========================================================================= */
+
+/* ── 1. THEME: BALLON D'OR GALA (Hoàng Kim 24K Paris - Quả Bóng Vàng Thế Giới) ── */
+@keyframes ballonDorAura {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.75), 0 0 50px rgba(217, 119, 6, 0.45);
+    border-color: rgba(255, 215, 0, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(255, 215, 0, 0.95), 0 0 80px rgba(245, 158, 11, 0.7), 0 0 110px rgba(254, 240, 138, 0.5);
+    border-color: #fef08a;
+  }
+}
+
+.theme-ballon_dor {
+  --fc-glow: rgba(255, 215, 0, 0.85);
+  --fc-stroke-main: #ffd700;
+  --fc-stroke-sub: #b45309;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(254, 240, 138, 0.95);
+  --fc-accent: #facc15;
+  background: linear-gradient(135deg, #ffd700 0%, #b45309 25%, #fef08a 48%, #78350f 72%, #ffd700 100%);
+  animation: ballonDorAura 3s ease-in-out infinite;
+}
+.theme-ballon_dor .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 15%, rgba(254, 240, 138, 0.45) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(217, 119, 6, 0.3) 0%, transparent 50%),
+    linear-gradient(180deg, #1c1002 0%, #2a1902 50%, #0d0700 100%);
+}
+.theme-ballon_dor .fc26-ovr {
+  color: #fef08a !important;
+  text-shadow: 0 0 18px rgba(255, 215, 0, 0.95), 0 0 35px rgba(245, 158, 11, 0.8), 0 0 50px rgba(255, 215, 0, 0.5);
+}
+.theme-ballon_dor .fc26-pos {
+  color: #ffd700 !important;
+  border-color: rgba(255, 215, 0, 0.65) !important;
+  background: rgba(255, 215, 0, 0.22) !important;
+  font-weight: 900;
+}
+.theme-ballon_dor .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(180, 83, 9, 0.35), rgba(254, 240, 138, 0.9), rgba(180, 83, 9, 0.35));
+  border-top: 1.5px solid #ffd700;
+  border-bottom: 1.5px solid #ffd700;
+  color: #1a0f00 !important;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* ── 2. THEME: TREBLE (The Treble Royalty - Bạch Kim Thần Thánh & 3 Vương Miện) ── */
+.theme-treble {
+  --fc-glow: rgba(56, 189, 248, 0.65);
+  --fc-stroke-main: #f8fafc;
+  --fc-stroke-sub: #38bdf8;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(226, 232, 240, 0.9);
+  --fc-accent: #38bdf8;
+  background: linear-gradient(145deg, #f8fafc 0%, #64748b 25%, #0284c7 50%, #1e293b 75%, #e2e8f0 100%);
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.45), 0 0 45px rgba(226, 232, 240, 0.35);
+}
+.theme-treble .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(248, 250, 252, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.25) 0%, transparent 50%),
+    linear-gradient(180deg, #090e17 0%, #0f172a 50%, #030712 100%);
+}
+.theme-treble .fc26-ovr {
+  color: #f8fafc !important;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.85), 0 0 32px rgba(248, 250, 252, 0.9);
+}
+.theme-treble .fc26-pos {
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  background: rgba(56, 189, 248, 0.18) !important;
+}
+.theme-treble .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.2), rgba(248, 250, 252, 0.75), rgba(56, 189, 248, 0.2));
+  border-top: 1.5px solid #38bdf8;
+  border-bottom: 1.5px solid #38bdf8;
+  color: #0f172a !important;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* ── 3. THEME: WORLD CHAMPION (Nhà Vua Thế Giới - Vàng Kim Sa Mạc & Tinh Tú) ── */
+.theme-world_champion {
+  --fc-glow: rgba(245, 158, 11, 0.75);
+  --fc-stroke-main: #fbbf24;
+  --fc-stroke-sub: #1d4ed8;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(254, 243, 199, 0.9);
+  --fc-accent: #fbbf24;
+  background: linear-gradient(145deg, #fbbf24 0%, #78350f 28%, #1e3a8a 52%, #1e40af 76%, #f59e0b 100%);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.65), 0 0 50px rgba(30, 58, 138, 0.45);
+}
+.theme-world_champion .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(251, 191, 36, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 80% 85%, rgba(30, 58, 138, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #130a00 0%, #0a1128 50%, #020617 100%);
+}
+.theme-world_champion .fc26-ovr {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.85), 0 0 32px rgba(245, 158, 11, 0.65);
+}
+.theme-world_champion .fc26-pos {
+  color: #fbbf24 !important;
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  background: rgba(251, 191, 36, 0.18) !important;
+}
+.theme-world_champion .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25), rgba(251, 191, 36, 0.65), rgba(30, 58, 138, 0.3));
+  border-top: 1.5px solid #fbbf24;
+  border-bottom: 1.5px solid #fbbf24;
+  color: #ffffff;
+  font-weight: 900;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* ── 4. THEME: G.O.A.T IMMORTAL (Huyền Thoại Vĩ Đại Nhất - Hắc Thạch & Hologram) ── */
+@keyframes goatAura {
+  0% {
+    box-shadow: 0 0 20px rgba(192, 132, 252, 0.8), 0 0 40px rgba(236, 72, 153, 0.55), 0 0 60px rgba(56, 189, 248, 0.35);
+    border-color: rgba(192, 132, 252, 0.85);
+  }
+  33% {
+    box-shadow: 0 0 35px rgba(236, 72, 153, 0.9), 0 0 65px rgba(56, 189, 248, 0.7), 0 0 95px rgba(192, 132, 252, 0.5);
+    border-color: #f472b6;
+  }
+  66% {
+    box-shadow: 0 0 35px rgba(56, 189, 248, 0.9), 0 0 65px rgba(192, 132, 252, 0.75), 0 0 100px rgba(236, 72, 153, 0.6);
+    border-color: #38bdf8;
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(192, 132, 252, 0.8), 0 0 40px rgba(236, 72, 153, 0.55), 0 0 60px rgba(56, 189, 248, 0.35);
+    border-color: rgba(192, 132, 252, 0.85);
+  }
+}
+
+.theme-goat_immortal {
+  --fc-glow: rgba(192, 132, 252, 0.9);
+  --fc-stroke-main: #c084fc;
+  --fc-stroke-sub: #f472b6;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(245, 208, 254, 0.95);
+  --fc-accent: #f472b6;
+  background: linear-gradient(135deg, #09090b 0%, #6b21a8 25%, #ec4899 50%, #38bdf8 75%, #09090b 100%);
+  animation: goatAura 4s ease-in-out infinite;
+}
+.theme-goat_immortal .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(192, 132, 252, 0.45) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 20% 70%, rgba(56, 189, 248, 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, #090212 0%, #150524 50%, #030108 100%);
+}
+.theme-goat_immortal .fc26-ovr {
+  color: #f5d0fe !important;
+  text-shadow: 0 0 20px rgba(192, 132, 252, 0.95), 0 0 40px rgba(236, 72, 153, 0.85), 0 0 60px rgba(56, 189, 248, 0.8);
+}
+.theme-goat_immortal .fc26-pos {
+  color: #f5d0fe !important;
+  border-color: rgba(236, 72, 153, 0.65) !important;
+  background: rgba(192, 132, 252, 0.25) !important;
+}
+.theme-goat_immortal .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(107, 33, 168, 0.4), rgba(244, 114, 182, 0.7), rgba(56, 189, 248, 0.4));
+  border-top: 1.5px solid rgba(236, 72, 153, 0.9);
+  border-bottom: 1.5px solid rgba(56, 189, 248, 0.9);
+  color: #ffffff !important;
+  font-weight: 900;
+  text-shadow: 0 0 12px rgba(236, 72, 153, 0.9), 0 0 24px rgba(56, 189, 248, 0.75);
+}
+
 /* ── 3. THEME: TOTY / BLUE NEON (Đội Hình Tiêu Biểu Xanh Sapphire Neon) ─ */
 .theme-toty {
   --fc-glow: rgba(56, 189, 248, 0.65);
