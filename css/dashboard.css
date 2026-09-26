@@ -2423,6 +2423,166 @@
   border-color: #d4af37;
 }
 
+/* ── THEME: TOTW / IN-FORM (Đội Hình Xuất Sắc Tuần - Đen Carbon & Chỉ Vàng) ─ */
+.theme-totw {
+  --fc-glow: rgba(234, 179, 8, 0.65);
+  --fc-stroke-main: #ffd700;
+  --fc-stroke-sub: #ca8a04;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(254, 240, 138, 0.85);
+  --fc-accent: #facc15;
+  background: linear-gradient(145deg, #d4af37 0%, #27272a 24%, #09090b 50%, #18181b 76%, #eab308 100%);
+}
+.theme-totw .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(234, 179, 8, 0.3) 0%, transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.15) 0%, transparent 50%),
+    linear-gradient(180deg, #18181b 0%, #09090b 60%, #000000 100%);
+}
+.theme-totw .fc26-ovr {
+  color: #facc15 !important;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.65);
+}
+.theme-totw .fc26-pos {
+  color: #facc15 !important;
+  border-color: rgba(234, 179, 8, 0.5) !important;
+  background: rgba(234, 179, 8, 0.15) !important;
+}
+.theme-totw .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.55), rgba(234, 179, 8, 0.15));
+  border-top: 1.5px solid #eab308;
+  border-bottom: 1.5px solid #eab308;
+  color: #ffffff;
+}
+
+/* ── THEME: POTM (Cầu Thủ Xuất Sắc Nhất Tháng - Tím Hoàng Gia Premier League) ─ */
+.theme-potm {
+  --fc-glow: rgba(168, 85, 247, 0.7);
+  --fc-stroke-main: #c084fc;
+  --fc-stroke-sub: #7e22ce;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(243, 232, 255, 0.85);
+  --fc-accent: #c084fc;
+  background: linear-gradient(145deg, #c084fc 0%, #581c87 28%, #3b0764 54%, #7e22ce 78%, #e9d5ff 100%);
+}
+.theme-potm .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(192, 132, 252, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+    linear-gradient(180deg, #1e0933 0%, #2e1065 50%, #0f051d 100%);
+}
+.theme-potm .fc26-ovr {
+  color: #e9d5ff !important;
+  text-shadow: 0 0 16px rgba(192, 132, 252, 0.8);
+}
+.theme-potm .fc26-pos {
+  color: #e9d5ff !important;
+  border-color: rgba(192, 132, 252, 0.5) !important;
+  background: rgba(192, 132, 252, 0.2) !important;
+}
+.theme-potm .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.6), rgba(168, 85, 247, 0.2));
+  border-top: 1.5px solid rgba(192, 132, 252, 0.8);
+  border-bottom: 1.5px solid rgba(192, 132, 252, 0.8);
+  color: #ffffff;
+}
+
+/* ── THEME: RECORD BREAKER (Kỷ Lục Gia Lịch Sử - Đỏ Rực & Xanh Sapphire) ─ */
+.theme-record_breaker {
+  --fc-glow: rgba(220, 38, 38, 0.7);
+  --fc-stroke-main: #ef4444;
+  --fc-stroke-sub: #2563eb;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(254, 202, 202, 0.9);
+  --fc-accent: #f87171;
+  background: linear-gradient(145deg, #ef4444 0%, #991b1b 30%, #1e3a8a 62%, #2563eb 86%, #fca5a5 100%);
+}
+.theme-record_breaker .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(239, 68, 68, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 75% 80%, rgba(37, 99, 235, 0.35) 0%, transparent 50%),
+    linear-gradient(180deg, #2b0b0b 0%, #170d24 50%, #080d21 100%);
+}
+.theme-record_breaker .fc26-ovr {
+  color: #fca5a5 !important;
+  text-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
+}
+.theme-record_breaker .fc26-pos {
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+}
+.theme-record_breaker .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.65), rgba(37, 99, 235, 0.35));
+  border-top: 1.5px solid rgba(239, 68, 68, 0.85);
+  border-bottom: 1.5px solid rgba(239, 68, 68, 0.85);
+  color: #ffffff;
+}
+
+/* ── THEME: UCL COMMON (Đấu Trường Danh Giá C1 - Xanh Lam UEFA & Bóng Sao) ─ */
+.theme-ucl_common {
+  --fc-glow: rgba(37, 99, 235, 0.7);
+  --fc-stroke-main: #3b82f6;
+  --fc-stroke-sub: #1e40af;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(219, 234, 254, 0.9);
+  --fc-accent: #60a5fa;
+  background: linear-gradient(145deg, #60a5fa 0%, #1d4ed8 28%, #1e3a8a 55%, #0f172a 80%, #3b82f6 100%);
+}
+.theme-ucl_common .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(59, 130, 246, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 80% 85%, rgba(30, 58, 138, 0.45) 0%, transparent 55%),
+    linear-gradient(180deg, #071330 0%, #0b1f4d 50%, #030816 100%);
+}
+.theme-ucl_common .fc26-ovr {
+  color: #93c5fd !important;
+  text-shadow: 0 0 16px rgba(59, 130, 246, 0.85);
+}
+.theme-ucl_common .fc26-pos {
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+.theme-ucl_common .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0.6), rgba(37, 99, 235, 0.2));
+  border-top: 1.5px solid rgba(96, 165, 250, 0.8);
+  border-bottom: 1.5px solid rgba(96, 165, 250, 0.8);
+  color: #ffffff;
+}
+
+/* ── THEME: HEROES (Tượng Đài Đội Bóng - Xanh Lá & Vàng Gold Siêu Cường) ─ */
+.theme-heroes {
+  --fc-glow: rgba(16, 185, 129, 0.7);
+  --fc-stroke-main: #10b981;
+  --fc-stroke-sub: #eab308;
+  --fc-text-main: #ffffff;
+  --fc-text-sub: rgba(209, 250, 229, 0.9);
+  --fc-accent: #34d399;
+  background: linear-gradient(145deg, #34d399 0%, #065f46 30%, #eab308 55%, #047857 78%, #10b981 100%);
+}
+.theme-heroes .fc26-card-inner {
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(16, 185, 129, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 80% 85%, rgba(234, 179, 8, 0.25) 0%, transparent 50%),
+    linear-gradient(180deg, #04241a 0%, #064e3b 50%, #021a12 100%);
+}
+.theme-heroes .fc26-ovr {
+  color: #6ee7b7 !important;
+  text-shadow: 0 0 14px rgba(16, 185, 129, 0.8);
+}
+.theme-heroes .fc26-pos {
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  background: rgba(16, 185, 129, 0.2) !important;
+}
+.theme-heroes .fc26-name-ribbon {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.6), rgba(234, 179, 8, 0.25));
+  border-top: 1.5px solid rgba(52, 211, 153, 0.8);
+  border-bottom: 1.5px solid rgba(52, 211, 153, 0.8);
+  color: #ffffff;
+}
+
 /* ── 3. THEME: TOTY / BLUE NEON (Đội Hình Tiêu Biểu Xanh Sapphire Neon) ─ */
 .theme-toty {
   --fc-glow: rgba(56, 189, 248, 0.65);

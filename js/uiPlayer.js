@@ -180,11 +180,41 @@ export function renderFcsUltimateCard(player = getPlayer()) {
   const clubIcon = player.isAcademyStage ? (player.academy?.icon || '🌱') : (player.currentClub?.icon || '🏟️');
   const leagueFlag = player.isAcademyStage ? '🌱' : (player.currentClub?.league?.flag || '🌍');
 
-  // Gradient màu cho viền kim loại đôi SVG
+  // Gradient màu cho viền kim loại đôi SVG theo từng mùa thẻ
   const isFuture = theme.id === 'future' || theme.id === 'future_stars';
-  const strokeColorMain = theme.id === 'icon' ? '#ffd700' : (theme.id === 'toty' ? '#38bdf8' : (isFuture ? '#f43f5e' : '#fef08a'));
-  const strokeColorMid = theme.id === 'icon' ? '#ffffff' : (theme.id === 'toty' ? '#818cf8' : (isFuture ? '#ec4899' : '#eab308'));
-  const strokeColorEnd = theme.id === 'icon' ? '#d4af37' : (theme.id === 'toty' ? '#0284c7' : (isFuture ? '#38bdf8' : '#ca8a04'));
+  let strokeColorMain = isFuture ? '#f43f5e' : '#fef08a';
+  let strokeColorMid = isFuture ? '#ec4899' : '#eab308';
+  let strokeColorEnd = isFuture ? '#38bdf8' : '#ca8a04';
+
+  if (theme.id === 'totw') {
+    strokeColorMain = '#fef08a';
+    strokeColorMid = '#eab308';
+    strokeColorEnd = '#854d0e';
+  } else if (theme.id === 'potm') {
+    strokeColorMain = '#e9d5ff';
+    strokeColorMid = '#a855f7';
+    strokeColorEnd = '#6b21a8';
+  } else if (theme.id === 'record_breaker') {
+    strokeColorMain = '#fca5a5';
+    strokeColorMid = '#dc2626';
+    strokeColorEnd = '#2563eb';
+  } else if (theme.id === 'ucl_common') {
+    strokeColorMain = '#93c5fd';
+    strokeColorMid = '#3b82f6';
+    strokeColorEnd = '#1d4ed8';
+  } else if (theme.id === 'heroes') {
+    strokeColorMain = '#6ee7b7';
+    strokeColorMid = '#10b981';
+    strokeColorEnd = '#eab308';
+  } else if (theme.id === 'icon') {
+    strokeColorMain = '#ffd700';
+    strokeColorMid = '#ffffff';
+    strokeColorEnd = '#d4af37';
+  } else if (theme.id === 'toty') {
+    strokeColorMain = '#38bdf8';
+    strokeColorMid = '#818cf8';
+    strokeColorEnd = '#0284c7';
+  }
 
   // 7. Dựng cấu trúc HTML thẻ FC 26
   cardEl.innerHTML = `
