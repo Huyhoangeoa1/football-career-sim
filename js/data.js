@@ -359,6 +359,8 @@ export function getSubStat(player, subKey, fallbackFace = 'sho') {
   return Number(player?.[fallbackFace] || player?.attr1 || 60);
 }
 
+export const MAX_STAT_LIMIT = 110;
+
 /**
  * Đồng bộ hai chiều: Cập nhật chỉ số mặt thẻ Face Stat từ trung bình cộng các chỉ số con
  * @param {object} player 
@@ -370,7 +372,7 @@ export function syncFaceStatsFromSubStats(player) {
   for (const [groupKey, groupConf] of Object.entries(SUB_STATS_CONFIG)) {
     const sum = groupConf.stats.reduce((acc, s) => acc + (Number(player.subStats[s.key]) || 50), 0);
     const avg = Math.round(sum / groupConf.stats.length);
-    const clampedAvg = Math.max(1, Math.min(99, avg));
+    const clampedAvg = Math.max(1, Math.min(MAX_STAT_LIMIT, avg));
     player.stats[groupKey] = clampedAvg;
 
     const capKey = groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
@@ -407,7 +409,7 @@ export function syncSubStatsFromFaceStats(player, groupKey = null) {
     if (diff !== 0) {
       groupConf.stats.forEach(s => {
         const curVal = Number(player.subStats[s.key]) || 50;
-        player.subStats[s.key] = Math.max(1, Math.min(99, curVal + diff));
+        player.subStats[s.key] = Math.max(1, Math.min(MAX_STAT_LIMIT, curVal + diff));
       });
     }
   });

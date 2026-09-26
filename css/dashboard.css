@@ -4960,6 +4960,160 @@
   box-shadow: none;
 }
 
+/* =========================================================================
+   LIMIT BREAKTHROUGH (> 99) & SPECIAL TRAIT SP UPGRADE STYLES
+   ========================================================================= */
+
+.trait-stars-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+}
+
+.trait-actions-block {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.trait-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.btn-trait-sp-upgrade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(16, 185, 129, 0.75);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 78, 59, 0.5));
+  color: #6ee7b7;
+  text-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-trait-sp-upgrade:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.04);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  border-color: #a7f3d0;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.btn-trait-sp-upgrade:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+.btn-trait-sp-upgrade:disabled,
+.btn-trait-sp-upgrade.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  transform: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.btn-trait-sp-upgrade.blocked-trait-btn {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+.golden-badge {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(180, 83, 9, 0.35)) !important;
+  border: 1px solid #facc15 !important;
+  color: #fef08a !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.6) !important;
+}
+
+/* ── ĐỘT PHÁ CẢNH GIỚI CHỈ SỐ > 99 (BREAKTHROUGH GLOW) ─────────────────── */
+.score-breakthrough {
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff4500, #ec4899, #8b5cf6) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 0 5px rgba(255, 69, 0, 0.8)) drop-shadow(0 0 10px rgba(236, 72, 153, 0.6));
+  animation: statBreakthroughGlow 2.2s infinite ease-in-out;
+  display: inline-flex;
+  align-items: center;
+}
+
+@keyframes statBreakthroughGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px #ff4500) drop-shadow(0 0 8px #ec4899);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px #ff4500) drop-shadow(0 0 16px #8b5cf6) drop-shadow(0 0 20px #ec4899);
+    transform: scale(1.06);
+  }
+}
+
+.breakthrough-bolt {
+  -webkit-text-fill-color: #ffd700 !important;
+  color: #ffd700 !important;
+  margin-right: 2px;
+  display: inline-block;
+  animation: boltJitter 1.6s infinite ease-in-out;
+}
+
+@keyframes boltJitter {
+  0%, 100% { transform: rotate(0deg); opacity: 0.9; }
+  25% { transform: rotate(-8deg) scale(1.15); opacity: 1; }
+  75% { transform: rotate(8deg) scale(1.1); opacity: 1; }
+}
+
+.btn-substat-plus.btn-breakthrough-trigger {
+  width: auto !important;
+  min-width: 44px !important;
+  padding: 0 6px !important;
+  border-radius: 9999px !important;
+  font-size: 0.68rem !important;
+  border: 1px solid #f43f5e !important;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(168, 85, 247, 0.45)) !important;
+  color: #fecdd3 !important;
+  text-shadow: 0 0 6px rgba(244, 63, 94, 0.6) !important;
+  animation: breakthroughPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes breakthroughPulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(244, 63, 94, 0.4), inset 0 0 4px rgba(244, 63, 94, 0.2);
+    border-color: #f43f5e;
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(236, 72, 153, 0.8), inset 0 0 8px rgba(168, 85, 247, 0.4);
+    border-color: #ec4899;
+  }
+}
+
+.fill-breakthrough {
+  background: linear-gradient(90deg, #ff4500, #ec4899, #8b5cf6) !important;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.75) !important;
+}
+
+.item-breakthrough {
+  border-color: rgba(236, 72, 153, 0.35) !important;
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0.05), rgba(139, 92, 246, 0.08)) !important;
+}
+
 
 
 

@@ -12,6 +12,8 @@ import {
   generateSubStatsFromFaceStats 
 } from './data.js';
 
+export const MAX_STAT_LIMIT = 110;
+
 export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", academyId = null) {
   const nationality = NATIONALITIES_DATA.find(n => n.id === natId || n.idAlias === natId || n.code === natId) || NATIONALITIES_DATA[0];
   
@@ -293,9 +295,11 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     customAvatarUrl: '', // URL ảnh khuôn mặt cầu thủ tự chọn (PNG trong suốt)
 
     // ── Player Traits: Foot, Weak Foot & Skill Moves (EA FC Style) ───────
-    preferredFoot: 'Right', // 'Right' | 'Left'
-    weakFoot: (pos === 'GK' ? 2 : (['CB', 'DF', 'LB', 'RB'].includes(pos) ? 3 : 4)), // 1 - 5 ⭐
-    skillMoves: (pos === 'GK' ? 1 : (['CB', 'DF', 'LB', 'RB'].includes(pos) ? 2 : 3)), // 1 - 6 ⭐ (6 = Trickster+)
+    preferredFootSide: 'Right', // 'Right' | 'Left' (Kèo chân thuận)
+    preferredFoot: 'Right',     // Alias tương thích ngược
+    preferredFootStars: (pUpper === 'GK' || ['CB', 'DF'].includes(pUpper)) ? 3 : 4, // 1 - 5 ⭐
+    weakFoot: (pUpper === 'GK' ? 2 : (['CB', 'DF', 'LB', 'RB'].includes(pUpper) ? 3 : 4)), // 1 - 5 ⭐ (<= preferredFootStars)
+    skillMoves: (pUpper === 'GK' ? 1 : (['CB', 'DF', 'LB', 'RB'].includes(pUpper) ? 2 : 3)), // 1 - 6 ⭐ (6 = Trickster+)
     weakFootTrainProgress: 0,   // Số buổi tập tích lũy để thăng cấp sao chân nghịch (cần 5)
     skillMovesTrainProgress: 0,  // Số buổi tập tích lũy để thăng cấp sao kỹ thuật (cần 6)
 

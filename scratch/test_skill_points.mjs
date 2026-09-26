@@ -69,13 +69,13 @@ assert.strictEqual(player.skillPoints, 4, 'SP deducted by 1');
 assert.strictEqual(player.subStats.finishing, initialFinishing + 1, 'Sub-stat increased by 1');
 console.log('✓ Allocation deduction and sub-stat increment validated.');
 
-// Test capping at 99
-player.skillPoints = 10;
-player.subStats.finishing = 99;
+// Test capping at 110 (Thần Thoại)
+player.skillPoints = 100;
+player.subStats.finishing = 110;
 const capRes = allocateSubStatPoint(player, 'finishing', 1);
-assert.strictEqual(capRes.success, false, 'Cannot allocate past 99');
-assert(capRes.reason.includes('99'), 'Reason mentions 99 limit');
-assert.strictEqual(player.skillPoints, 10, 'SP not deducted when max reached');
+assert.strictEqual(capRes.success, false, 'Cannot allocate past 110');
+assert(capRes.reason.includes('110') || capRes.reason.includes('tối đa'), 'Reason mentions 110 limit');
+assert.strictEqual(player.skillPoints, 100, 'SP not deducted when max reached');
 
 // Test insufficient SP
 player.skillPoints = 0;

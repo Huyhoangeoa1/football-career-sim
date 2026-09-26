@@ -16,7 +16,8 @@ import {
   generateSubStatsFromFaceStats,
   syncFaceStatsFromSubStats,
   syncSubStatsFromFaceStats,
-  getSubStat
+  getSubStat,
+  MAX_STAT_LIMIT
 } from './data.js';
 
 export {
@@ -24,7 +25,8 @@ export {
   generateSubStatsFromFaceStats,
   syncFaceStatsFromSubStats,
   syncSubStatsFromFaceStats,
-  getSubStat
+  getSubStat,
+  MAX_STAT_LIMIT
 };
 import { logCareerEvent } from './mediaEngine.js';
 import { saveGame } from './storage.js';
@@ -343,9 +345,9 @@ export function ensurePlayerStats(player) {
       const baseFace = Number(player.stats[groupKey]) || 55;
       groupConf.stats.forEach(s => {
         if (player.subStats[s.key] === undefined || player.subStats[s.key] === null || isNaN(Number(player.subStats[s.key]))) {
-          player.subStats[s.key] = Math.max(1, Math.min(99, Math.round(baseFace)));
+          player.subStats[s.key] = Math.max(1, Math.min(MAX_STAT_LIMIT, Math.round(baseFace)));
         } else {
-          player.subStats[s.key] = Math.max(1, Math.min(99, Math.round(Number(player.subStats[s.key]))));
+          player.subStats[s.key] = Math.max(1, Math.min(MAX_STAT_LIMIT, Math.round(Number(player.subStats[s.key]))));
         }
       });
     }
@@ -377,7 +379,7 @@ export function calculateOVR(player) {
     (s.def || 50) * (weights.def || 0.166) +
     (s.phy || 50) * (weights.phy || 0.167)
   );
-  return Math.max(10, Math.min(99, Math.round(weighted)));
+  return Math.max(10, Math.min(MAX_STAT_LIMIT, Math.round(weighted)));
 }
 
 export function getOverallPower(player) {
@@ -395,7 +397,7 @@ export function getOverallPower(player) {
   }
 
   const res = Math.round(baseAvg + formBonus + moraleBonus);
-  return Math.max(10, Math.min(99, isNaN(res) ? Math.round(baseAvg) : res));
+  return Math.max(10, Math.min(MAX_STAT_LIMIT, isNaN(res) ? Math.round(baseAvg) : res));
 }
 
 export function calculateNetWorth(player) {
@@ -418,7 +420,7 @@ export function clampStats(player) {
   if (!player) return;
   ensurePlayerStats(player);
   ['pac', 'sho', 'pas', 'dri', 'def', 'phy'].forEach(k => {
-    player.stats[k] = Math.max(10, Math.min(99, player.stats[k]));
+    player.stats[k] = Math.max(10, Math.min(MAX_STAT_LIMIT, player.stats[k]));
   });
   syncLegacyAttrs(player);
 
@@ -616,6 +618,34 @@ export function calculateEarnedSkillPoints(matchResult = {}, player = null) {
 }
 
 /**
+ * Chi phí SP để nâng cấp chỉ số (hỗ trợ Đột Phá Cảnh Giới > 99 lên tối đa 110)
+ * - Giai đoạn thường (<= 98 -> 99): 1 SP / 1 điểm
+ * - Giai đoạn Đột Phá Trần (99 -> 100): 5 SP
+ * - Giai đoạn Vượt Ngưỡng Thần Thoại (100 -> 110):
+ *   + 100 -> 101: 7 SP
+ *   + 101 -> 102: 10 SP
+ *   + 102 -> 103: 14 SP
+ *   + 103 -> 104: 18 SP
+ *   + 104 -> 105: 24 SP
+ *   + 105 -> 110: 30 SP / mỗi điểm
+ * - >= 110: Infinity (Trần cứng tuyệt đối)
+ * @param {number} currentValue
+ * @returns {number}
+ */
+export function getStatUpgradeCost(currentValue) {
+  const val = Math.floor(Number(currentValue) || 50);
+  if (val < 99) return 1;
+  if (val === 99) return 5;
+  if (val === 100) return 7;
+  if (val === 101) return 10;
+  if (val === 102) return 14;
+  if (val === 103) return 18;
+  if (val === 104) return 24;
+  if (val >= 105 && val < 110) return 30;
+  return Infinity;
+}
+
+/**
  * Phân bổ Điểm Tiềm Năng (SP) trực tiếp vào 1 trong 29 chỉ số con
  * @param {object} player
  * @param {string} subStatKey Key của chỉ số con (ví dụ: 'finishing', 'sprintSpeed')
@@ -626,26 +656,26 @@ export function allocateSubStatPoint(player, subStatKey, amount = 1) {
   if (!player) return { success: false, reason: 'Không tìm thấy dữ liệu cầu thủ.' };
   ensurePlayerStats(player);
 
-  const currentSP = Math.max(0, Number(player.skillPoints) || 0);
-  if (currentSP < amount) {
-    return { success: false, reason: 'Không đủ Điểm Tiềm Năng (SP) để nâng cấp.' };
-  }
-
   const curVal = Number(player.subStats ? player.subStats[subStatKey] : undefined);
   if (isNaN(curVal)) {
     return { success: false, reason: 'Chỉ số con không hợp lệ.' };
   }
-  if (curVal >= 99) {
-    return { success: false, reason: 'Chỉ số này đã chạm ngưỡng tối đa (99).' };
+  if (curVal >= MAX_STAT_LIMIT) {
+    return { success: false, reason: 'Chỉ số này đã chạm ngưỡng tối đa thần thoại (110).' };
   }
 
-  const actualAdd = Math.min(amount, 99 - curVal, currentSP);
-  if (actualAdd <= 0) {
-    return { success: false, reason: 'Không thể nâng thêm.' };
+  const cost = getStatUpgradeCost(curVal);
+  const currentSP = Math.max(0, Number(player.skillPoints) || 0);
+  if (currentSP < cost) {
+    return { 
+      success: false, 
+      cost,
+      reason: `Bạn không đủ Điểm Tiềm Năng (SP). Cần ${cost} SP để nâng cấp (Hiện có: ${currentSP} SP).` 
+    };
   }
 
-  player.skillPoints -= actualAdd;
-  player.subStats[subStatKey] = Math.min(99, curVal + actualAdd);
+  player.skillPoints -= cost;
+  player.subStats[subStatKey] = Math.min(MAX_STAT_LIMIT, curVal + 1);
 
   // Tìm groupKey cha (pac, sho, pas, dri, def, phy)
   let parentGroupKey = null;
@@ -671,11 +701,149 @@ export function allocateSubStatPoint(player, subStatKey, amount = 1) {
   return {
     success: true,
     subStatKey,
+    cost,
     newSubStatVal: player.subStats[subStatKey],
+    isBreakthrough: player.subStats[subStatKey] >= 100,
     parentGroupKey,
     newParentFaceVal: parentGroupKey ? player.stats[parentGroupKey] : null,
     skillPointsRemaining: player.skillPoints,
     newOVR: player.ovr
+  };
+}
+
+/**
+ * Bảng chi phí nâng cấp Chân Thuận, Chân Nghịch & Kỹ Thuật bằng SP
+ */
+export const SPECIAL_TRAIT_UPGRADE_COSTS = {
+  preferredFootStars: {
+    1: 10,
+    2: 12,
+    3: 15, // 3 -> 4: 15 SP
+    4: 25  // 4 -> 5: 25 SP
+  },
+  weakFoot: {
+    1: 10,
+    2: 12, // 2 -> 3: 12 SP
+    3: 20, // 3 -> 4: 20 SP
+    4: 35  // 4 -> 5: 35 SP
+  },
+  skillMoves: {
+    1: 10,
+    2: 12,
+    3: 15, // 3 -> 4: 15 SP
+    4: 25, // 4 -> 5: 25 SP
+    5: 50  // 5 -> 6: 50 SP
+  }
+};
+
+/**
+ * Lấy chi phí và trạng thái nâng cấp Kỹ năng đặc biệt bằng SP
+ * @param {object} player 
+ * @param {string} traitType 'preferredFootStars' | 'weakFoot' | 'skillMoves'
+ * @returns {object|null}
+ */
+export function getSpecialTraitUpgradeCost(player, traitType) {
+  if (!player) return null;
+  const currentSP = Math.max(0, Number(player.skillPoints) || 0);
+
+  if (traitType === 'preferredFootStars') {
+    const cur = Math.max(1, Math.min(5, Number(player.preferredFootStars) || 4));
+    if (cur >= 5) {
+      return { canUpgrade: false, isMax: true, cost: 0, reason: 'Chân thuận đã đạt tối đa 5⭐.' };
+    }
+    const cost = SPECIAL_TRAIT_UPGRADE_COSTS.preferredFootStars[cur] || 25;
+    return { canUpgrade: currentSP >= cost, isMax: false, cost, nextLevel: cur + 1 };
+  }
+
+  if (traitType === 'weakFoot') {
+    const cur = Math.max(1, Math.min(5, Number(player.weakFoot) || 3));
+    const prefStars = Math.max(1, Math.min(5, Number(player.preferredFootStars) || 4));
+    if (cur >= 5) {
+      return { canUpgrade: false, isMax: true, cost: 0, reason: 'Chân nghịch đã đạt tối đa 5⭐.' };
+    }
+    const cost = SPECIAL_TRAIT_UPGRADE_COSTS.weakFoot[cur] || 35;
+    if (cur >= prefStars) {
+      return { 
+        canUpgrade: false, 
+        isMax: false, 
+        cost, 
+        nextLevel: cur + 1, 
+        blockedByPrefFoot: true, 
+        reason: 'Chân nghịch không thể vượt quá cấp sao chân thuận. Cần nâng Chân Thuận trước!' 
+      };
+    }
+    return { canUpgrade: currentSP >= cost, isMax: false, cost, nextLevel: cur + 1 };
+  }
+
+  if (traitType === 'skillMoves') {
+    const cur = Math.max(1, Math.min(6, Number(player.skillMoves) || 3));
+    if (cur >= 6) {
+      return { canUpgrade: false, isMax: true, cost: 0, reason: 'Kỹ thuật đã đạt cảnh giới tối thượng 6⭐ Trickster+.' };
+    }
+    const cost = SPECIAL_TRAIT_UPGRADE_COSTS.skillMoves[cur] || 50;
+    return { canUpgrade: currentSP >= cost, isMax: false, cost, nextLevel: cur + 1 };
+  }
+
+  return null;
+}
+
+/**
+ * Nâng cấp Kỹ năng đặc biệt (Chân Thuận, Chân Nghịch, Kỹ Thuật) bằng Điểm Tiềm Năng (SP)
+ * @param {object} player 
+ * @param {string} traitType 'preferredFootStars' | 'weakFoot' | 'skillMoves'
+ * @returns {object}
+ */
+export function upgradeSpecialTraitWithSP(player, traitType) {
+  if (!player) return { success: false, reason: 'Không tìm thấy dữ liệu cầu thủ.' };
+  player.skillPoints = Math.max(0, Number(player.skillPoints) || 0);
+  player.preferredFootSide = player.preferredFootSide || player.preferredFoot || 'Right';
+  player.preferredFoot = player.preferredFootSide;
+  player.preferredFootStars = Math.max(1, Math.min(5, Number(player.preferredFootStars) || 4));
+  player.weakFoot = Math.max(1, Math.min(player.preferredFootStars, Number(player.weakFoot) || 3));
+  player.skillMoves = Math.max(1, Math.min(6, Number(player.skillMoves) || 3));
+
+  const info = getSpecialTraitUpgradeCost(player, traitType);
+  if (!info) return { success: false, reason: 'Loại kỹ năng không hợp lệ.' };
+  if (info.isMax) return { success: false, reason: info.reason };
+  if (info.blockedByPrefFoot) return { success: false, reason: info.reason };
+  if (player.skillPoints < info.cost) {
+    return { success: false, reason: `Bạn cần ${info.cost} Điểm Tiềm Năng (SP) để nâng cấp (Hiện có: ${player.skillPoints} SP).` };
+  }
+
+  player.skillPoints -= info.cost;
+
+  let title = null;
+  if (traitType === 'preferredFootStars') {
+    player.preferredFootStars += 1;
+  } else if (traitType === 'weakFoot') {
+    player.weakFoot += 1;
+    player.weakFootTrainProgress = 0;
+    if (player.weakFoot === 5) {
+      player.twoFootedMaster = true;
+      title = 'Hai Chân Như Một (5⭐)';
+    }
+  } else if (traitType === 'skillMoves') {
+    player.skillMoves += 1;
+    player.skillMovesTrainProgress = 0;
+    if (player.skillMoves === 6) {
+      player.tricksterMaster = true;
+      title = 'Trickster+ Master (6⭐)';
+    }
+  }
+
+  try {
+    saveGame(player);
+  } catch (e) {
+    console.warn('[upgradeSpecialTraitWithSP] Save error:', e);
+  }
+
+  return {
+    success: true,
+    traitType,
+    newLevel: traitType === 'preferredFootStars' ? player.preferredFootStars : (traitType === 'weakFoot' ? player.weakFoot : player.skillMoves),
+    cost: info.cost,
+    skillPointsRemaining: player.skillPoints,
+    title
   };
 }
 

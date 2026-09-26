@@ -7,7 +7,8 @@ import {
   YOUTH_LEAGUE_CLUBS,
   SUB_STATS_CONFIG,
   generateSubStatsFromFaceStats,
-  getInitialStatsForPosition
+  getInitialStatsForPosition,
+  MAX_STAT_LIMIT
 } from './data.js';
 
 const SAVE_KEY    = 'fcs_save_v1';
@@ -114,17 +115,26 @@ export function _migrate(data) {
   if (data.customAvatarUrl === undefined) {
     data.customAvatarUrl = '';
   }
-  if (!data.preferredFoot) {
-    data.preferredFoot = 'Right';
+  data.preferredFootSide = data.preferredFootSide || data.preferredFoot || 'Right';
+  data.preferredFoot = data.preferredFootSide;
+  if (!data.preferredFootStars) {
+    data.preferredFootStars = (data.ovr && data.ovr >= 85) ? 5 : 4;
   }
+  data.preferredFootStars = Math.max(1, Math.min(5, Number(data.preferredFootStars) || 4));
+
   if (!data.weakFoot) {
     const p = String(data.position || 'ST').toUpperCase();
     data.weakFoot = p === 'GK' ? 2 : (['CB', 'DF', 'LB', 'RB'].includes(p) ? 3 : 4);
   }
+  // Đảm bảo chân nghịch không bao giờ vượt quá cấp sao chân thuận
+  data.weakFoot = Math.max(1, Math.min(data.preferredFootStars, Number(data.weakFoot) || 3));
+
   if (!data.skillMoves) {
     const p = String(data.position || 'ST').toUpperCase();
     data.skillMoves = p === 'GK' ? 1 : (['CB', 'DF', 'LB', 'RB'].includes(p) ? 2 : 3);
   }
+  data.skillMoves = Math.max(1, Math.min(6, Number(data.skillMoves) || 3));
+
   if (data.weakFootTrainProgress === undefined) {
     data.weakFootTrainProgress = 0;
   }
@@ -182,9 +192,9 @@ export function _migrate(data) {
       const baseFace = Number(data.stats[groupKey]) || 55;
       groupConf.stats.forEach(s => {
         if (data.subStats[s.key] === undefined || data.subStats[s.key] === null || isNaN(Number(data.subStats[s.key]))) {
-          data.subStats[s.key] = Math.max(1, Math.min(99, Math.round(baseFace)));
+          data.subStats[s.key] = Math.max(1, Math.min(MAX_STAT_LIMIT, Math.round(baseFace)));
         } else {
-          data.subStats[s.key] = Math.max(1, Math.min(99, Math.round(Number(data.subStats[s.key]))));
+          data.subStats[s.key] = Math.max(1, Math.min(MAX_STAT_LIMIT, Math.round(Number(data.subStats[s.key]))));
         }
       });
     }

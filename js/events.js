@@ -745,11 +745,25 @@ export function launchInteractiveMatchCenter(matchInfo, player, onFinishCallback
     choicesContainerEl.innerHTML = '';
 
     m.choices.forEach(choice => {
-      const winRate = Math.round(choice.successChance(player) * 100);
       const choiceText = typeof choice.text === 'function' ? choice.text(player) : choice.text;
-      const statHintText = typeof choice.statHint === 'function' ? choice.statHint(player) : choice.statHint;
+      let statHintText = typeof choice.statHint === 'function' ? choice.statHint(player) : choice.statHint;
+      const baseChance = choice.successChance(player);
+
+      const isDribble = choice.isDribble || /rê|lừa|Elastico|Rabona/i.test(choiceText);
+      const isShooting = choice.isShooting || /sút|dứt điểm|cứa lòng|đại bác|lốp bóng|vô-lê/i.test(choiceText);
+      const dribbleStat = Math.max(Number(player.stats?.dri) || 0, Number(player.subStats?.dribbling) || 0);
+      const shootingStat = Math.max(Number(player.stats?.sho) || 0, Number(player.subStats?.finishing) || 0, Number(player.subStats?.shotPower) || 0);
+      const isBreakthroughCritical = (isDribble && dribbleStat >= 100) || (isShooting && shootingStat >= 100);
+
+      const finalChance = isBreakthroughCritical ? Math.min(0.99, baseChance + 0.12) : baseChance;
+      const winRate = Math.round(finalChance * 100);
+
+      if (isBreakthroughCritical) {
+        statHintText += ` | ⚡ Đột Phá Thần Thoại: Tỷ lệ chí mạng, bỏ qua cản phá!`;
+      }
+
       const card = document.createElement('div');
-      card.className = 'mc-choice-card';
+      card.className = `mc-choice-card ${isBreakthroughCritical ? 'mc-choice-breakthrough' : ''}`;
       card.innerHTML = `
         <div class="mc-choice-top">
           <span class="mc-choice-label">${choiceText}</span>
@@ -762,19 +776,23 @@ export function launchInteractiveMatchCenter(matchInfo, player, onFinishCallback
 
       card.onclick = () => {
         const roll = Math.random();
-        const isSuccess = roll <= choice.successChance(player);
+        const isSuccess = roll <= finalChance;
 
         if (isSuccess) {
           choice.onSuccess(player, matchResultStats);
           if (isPlayerHome) homeScore++; else awayScore++;
           updateScoreboard();
-          const sText = typeof choice.successText === 'function' ? choice.successText(player) : choice.successText;
+          let sText = typeof choice.successText === 'function' ? choice.successText(player) : choice.successText;
+          if (isShooting && shootingStat >= 100) {
+            sText = '⚡ SIÊU PHẨM THẦN THOẠI! Quỹ đạo bóng xé gió vượt ngưỡng con người, thủ môn chỉ có thể đứng nhìn trong tuyệt vọng!';
+          } else if (isDribble && dribbleStat >= 100) {
+            sText = '⚡ VŨ ĐIỆU BẤT KHẢ XÂM PHẠM! Pha rê bóng đạt cảnh giới thần thoại khiến mọi pha tắc bóng đều bị hóa giải hoàn toàn!';
+          }
           addMatchEvent(m.minute, "⚽", sText);
         } else {
           choice.onFailure(player, matchResultStats);
-          const isDribble = choice.isDribble || /rê|lừa|Elastico|Rabona/i.test(choiceText);
-          if (isDribble && player.skillMoves >= 6) {
-            addMatchEvent(m.minute, "🪄", `Đối thủ cố phạm lỗi truy cản nhưng đôi chân Trickster+ thoăn thoắt né đòn an toàn!`);
+          if (isDribble && (player.skillMoves >= 6 || dribbleStat >= 100)) {
+            addMatchEvent(m.minute, "🪄", `Đối thủ cố phạm lỗi truy cản nhưng đôi chân đạt cảnh giới thần thoại thoăn thoắt né đòn an toàn!`);
           }
           // Opponent might score on counter
           if (Math.random() < 0.4) {

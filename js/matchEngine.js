@@ -418,11 +418,28 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
           wfPenalty = getWeakFootModifier(wfRating, true);
         }
 
-        const calcChance = Math.max(0.30, Math.min(0.96, (baseChance + statBonus + skillBonus + wfPenalty) * penaltyAccuracyMult + tierSuccessBonus + videoBonus));
+        const isShootingAction = Boolean(
+          c.id?.includes('SHOOT') || 
+          c.id?.includes('FINISH') || 
+          c.statKey === 'sho' || 
+          /sút|dứt điểm|cứa lòng|đại bác|lốp bóng|vô-lê/i.test(c.text || '')
+        );
+
+        const isBreakthrough = statVal >= 100;
+        let breakthroughCriticalBonus = 0;
+        if (isBreakthrough) {
+          // Mở khóa tỷ lệ chí mạng (Critical Success Chance): Bỏ qua hoàn toàn chỉ số cản phá của thủ môn/hậu vệ AI
+          breakthroughCriticalBonus = 0.10 + Math.min(0.08, (statVal - 100) * 0.01);
+        }
+
+        const calcChance = Math.max(0.30, Math.min(0.99, (baseChance + statBonus + skillBonus + wfPenalty + breakthroughCriticalBonus) * penaltyAccuracyMult + tierSuccessBonus + videoBonus));
 
         let statHintText = typeof c.statHint === 'function' ? c.statHint(player) : c.statHint;
         if (!statHintText) {
           statHintText = `Dựa vào ${c.statName || 'Chỉ số'} (${statVal})`;
+        }
+        if (isBreakthrough) {
+          statHintText += ` | ⚡ Đột Phá Thần Thoại (${statVal}): Tỷ lệ chí mạng, xuyên thủng hàng thủ!`;
         }
         if (isDribbleAction) {
           if (smRating >= 6) {
@@ -439,7 +456,18 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
           }
         }
 
-        const cardRiskVal = (c.cardRisk || 0) * (isDribbleAction && smRating >= 6 ? 0.5 : 1.0);
+        // Rê bóng / Kỹ thuật >= 100: Miễn nhiễm hoàn toàn với các pha tắc bóng thông thường
+        let cardRiskVal = (c.cardRisk || 0) * (isDribbleAction && smRating >= 6 ? 0.5 : 1.0);
+        if (isDribbleAction && (statVal >= 100 || (player.stats?.dri || 0) >= 100)) {
+          cardRiskVal = 0;
+        }
+
+        let customSuccessText = c.successText || null;
+        if (isBreakthrough && isShootingAction) {
+          customSuccessText = '⚡ SIÊU PHẨM THẦN THOẠI! Quỹ đạo bóng xé gió vượt ngưỡng con người, thủ môn chỉ có thể đứng nhìn trong tuyệt vọng!';
+        } else if (isBreakthrough && isDribbleAction) {
+          customSuccessText = '⚡ VŨ ĐIỆU BẤT KHẢ XÂM PHẠM! Pha rê bóng đạt cảnh giới thần thoại khiến mọi pha tắc bóng đều bị hóa giải hoàn toàn!';
+        }
 
         return {
           text: choiceText,
@@ -451,7 +479,7 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
           fameBonus: c.fameBonus || 0,
           ratingBonus: c.ratingBonus || 0,
           cardRisk: cardRiskVal,
-          successText: c.successText || null
+          successText: customSuccessText
         };
       })
     };

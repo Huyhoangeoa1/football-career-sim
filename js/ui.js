@@ -57,7 +57,11 @@ export {
 
 export {
   calculateEarnedSkillPoints,
-  allocateSubStatPoint
+  allocateSubStatPoint,
+  getStatUpgradeCost,
+  getSpecialTraitUpgradeCost,
+  upgradeSpecialTraitWithSP,
+  SPECIAL_TRAIT_UPGRADE_COSTS
 } from './playerEngine.js';
 
 // ── Signature Traits, Golden Shoe & Ballon D'Or Trackers ─────────────────

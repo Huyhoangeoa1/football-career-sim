@@ -6,7 +6,15 @@ import { LIFESTYLE_CATALOG, SIGNATURE_TRAITS, SUB_STATS_CONFIG } from './data.js
 import { CARD_AVATARS, getAvatarById } from './cardAvatars.js';
 import { CARD_THEMES, getThemeById, checkThemeUnlocked } from './cardThemes.js';
 import { getPlayer } from './state.js';
-import { ensurePlayerStats, calculateOVR, getFameTier, allocateSubStatPoint } from './playerEngine.js';
+import { 
+  ensurePlayerStats, 
+  calculateOVR, 
+  getFameTier, 
+  allocateSubStatPoint,
+  getStatUpgradeCost,
+  getSpecialTraitUpgradeCost,
+  upgradeSpecialTraitWithSP
+} from './playerEngine.js';
 import { formatCurrency } from './uiCore.js';
 /* =========================================================================
    4. ACTIVE BUFFS STRIP
@@ -631,29 +639,52 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
   const container = document.getElementById('playerSpecialTraitsContainer');
   if (!container) return;
 
-  const prefFoot = player.preferredFoot || 'Right';
+  const prefSide = player.preferredFootSide || player.preferredFoot || 'Right';
+  const prefStars = Math.min(5, Math.max(1, Number(player.preferredFootStars) || 4));
   const wf = Math.min(5, Math.max(1, Number(player.weakFoot) || 3));
   const sm = Math.min(6, Math.max(1, Number(player.skillMoves) || 3));
   const wfProg = Number(player.weakFootTrainProgress) || 0;
   const smProg = Number(player.skillMovesTrainProgress) || 0;
 
+  const isPrefMax = prefStars >= 5;
   const isWfMax = wf >= 5;
   const isSmMax = sm >= 6;
+
+  const prefCostInfo = getSpecialTraitUpgradeCost(player, 'preferredFootStars');
+  const wfCostInfo = getSpecialTraitUpgradeCost(player, 'weakFoot');
+  const smCostInfo = getSpecialTraitUpgradeCost(player, 'skillMoves');
 
   container.innerHTML = `
     <div class="traits-grid-3">
       <!-- 1. Chân Thuận (Preferred Foot) -->
-      <div class="trait-card trait-card-foot" id="cardPrefFoot" title="Nhấp để chuyển đổi Chân Thuận (Phải / Trái)">
+      <div class="trait-card trait-card-foot" id="cardPrefFoot" title="Nhấp nút Kèo để đổi Chân Thuận (Phải / Trái), dùng SP để nâng sao">
         <div class="trait-header">
           <span class="trait-icon">🦶</span>
           <span class="trait-title">Chân Thuận</span>
         </div>
         <div class="trait-value foot-val">
-          <span class="foot-badge ${prefFoot === 'Left' ? 'foot-left' : 'foot-right'}" id="btnToggleFoot">
-            ${prefFoot === 'Left' ? 'Trái (Left) 👟' : 'Phải (Right) 👟'}
+          <span class="foot-badge ${prefSide === 'Left' ? 'foot-left' : 'foot-right'}" id="btnToggleFoot" title="Bấm để chuyển đổi chân thuận Phải / Trái">
+            ${prefSide === 'Left' ? 'Trái (Left) 👟' : 'Phải (Right) 👟'}
           </span>
+          <div class="trait-stars-inline">
+            <span class="stars-display">${_renderWfStars(prefStars)}</span>
+            <span class="stars-counter">(${prefStars}/5)</span>
+          </div>
         </div>
-        <div class="trait-subtext">${prefFoot === 'Left' ? 'Kèo trái khéo léo & xoáy hiểm' : 'Kèo phải uy lực & chính xác'}</div>
+        <div class="trait-subtext">${prefSide === 'Left' ? 'Kèo trái ma thuật & sút xoáy' : 'Kèo phải uy lực & nã đại bác'}</div>
+        <div class="trait-actions-block">
+          ${!isPrefMax ? `
+            <button class="btn-trait-sp-upgrade ${prefCostInfo?.canUpgrade ? 'can-upgrade' : 'disabled'}"
+                    id="btnUpgradePrefFootSP"
+                    type="button"
+                    ${!prefCostInfo?.canUpgrade ? 'disabled' : ''}
+                    title="${prefCostInfo?.canUpgrade ? `Nâng Chân Thuận lên ${prefStars + 1}⭐ (${prefCostInfo.cost} SP)` : `Cần ${prefCostInfo?.cost} SP để nâng Chân Thuận (Hiện có: ${player.skillPoints || 0} SP)`}">
+              ⚡ +Sao (${prefCostInfo?.cost} SP)
+            </button>
+          ` : `
+            <div class="trait-maxed-badge">MAX 5⭐ TOÀN DIỆN</div>
+          `}
+        </div>
       </div>
 
       <!-- 2. Chân Nghịch (Weak Foot) -->
@@ -669,13 +700,34 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
         <div class="trait-subtext ${isWfMax ? 'golden-glow-text' : ''}">
           ${isWfMax ? '✨ Hai chân như một (100% Lực)' : (wf === 4 ? 'Rất thuần thục (-5% phạt)' : (wf === 3 ? 'Khá đồng đều (-10% phạt)' : 'Hạn chế (-25% lực/chính xác)'))}
         </div>
-        ${!isWfMax ? `
-          <button class="btn-trait-train" id="btnTrainWeakFoot" title="Luyện tập sút chân nghịch (-10% Thể lực)">
-            🎯 Luyện Sút (${wfProg}/5)
-          </button>
-        ` : `
-          <div class="trait-maxed-badge">MAX 5⭐ TOÀN DIỆN</div>
-        `}
+        <div class="trait-actions-block">
+          ${!isWfMax ? `
+            <div class="trait-btn-group">
+              ${wfCostInfo?.blockedByPrefFoot ? `
+                <button class="btn-trait-sp-upgrade disabled blocked-trait-btn"
+                        id="btnUpgradeWfSP"
+                        type="button"
+                        disabled
+                        title="Cần nâng Chân Thuận trước (Chân nghịch không thể vượt chân thuận)">
+                  🔒 Cần nâng Chân Thuận
+                </button>
+              ` : `
+                <button class="btn-trait-sp-upgrade ${wfCostInfo?.canUpgrade ? 'can-upgrade' : 'disabled'}"
+                        id="btnUpgradeWfSP"
+                        type="button"
+                        ${!wfCostInfo?.canUpgrade ? 'disabled' : ''}
+                        title="${wfCostInfo?.canUpgrade ? `Nâng Chân Nghịch lên ${wf + 1}⭐ (${wfCostInfo?.cost} SP)` : `Cần ${wfCostInfo?.cost} SP để nâng Chân Nghịch (Hiện có: ${player.skillPoints || 0} SP)`}">
+                  ⚡ +Sao (${wfCostInfo?.cost} SP)
+                </button>
+              `}
+              <button class="btn-trait-train" id="btnTrainWeakFoot" title="Luyện tập sút chân nghịch (-10% Thể lực)">
+                🎯 Luyện Sút (${wfProg}/5)
+              </button>
+            </div>
+          ` : `
+            <div class="trait-maxed-badge golden-badge">✨ HAI CHÂN NHƯ MỘT (5⭐)</div>
+          `}
+        </div>
       </div>
 
       <!-- 3. Kỹ Thuật (Skill Moves) -->
@@ -691,33 +743,98 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
         <div class="trait-subtext ${sm === 6 ? 'neon-purple-glow-text' : ''}">
           ${sm === 6 ? '🔮 6⭐ Trickster+ Tối Thượng' : (sm === 5 ? '5⭐ Ảo thuật gia (+15% rê)' : (sm === 4 ? '4⭐ Điêu luyện (+10% rê)' : 'Kỹ thuật cơ bản'))}
         </div>
-        ${sm < 5 ? `
-          <button class="btn-trait-train" id="btnTrainSkillMoves" title="Luyện tập đảo chân qua người (-10% Thể lực)">
-            🪄 Luyện Kỹ Thuật (${smProg}/6)
-          </button>
-        ` : (sm === 5 ? `
-          <div class="trait-upgrade-hint" title="Cần Thuê Chuyên Gia Kỹ Thuật Freestyle tại Cửa Hàng để đạt cảnh giới 6⭐">
-            ⭐ Thuê Chuyên Gia (Cửa Hàng)
-          </div>
-        ` : `
-          <div class="trait-maxed-badge trickster-badge">TRICKSTER+ 6⭐ MASTER</div>
-        `)}
+        <div class="trait-actions-block">
+          ${!isSmMax ? `
+            <div class="trait-btn-group">
+              <button class="btn-trait-sp-upgrade ${smCostInfo?.canUpgrade ? 'can-upgrade' : 'disabled'}"
+                      id="btnUpgradeSmSP"
+                      type="button"
+                      ${!smCostInfo?.canUpgrade ? 'disabled' : ''}
+                      title="${smCostInfo?.canUpgrade ? `Nâng Kỹ Thuật lên ${sm + 1}⭐ (${smCostInfo?.cost} SP)` : `Cần ${smCostInfo?.cost} SP để nâng Kỹ Thuật (Hiện có: ${player.skillPoints || 0} SP)`}">
+                ⚡ +Sao (${smCostInfo?.cost} SP)
+              </button>
+              ${sm < 5 ? `
+                <button class="btn-trait-train" id="btnTrainSkillMoves" title="Luyện tập đảo chân qua người (-10% Thể lực)">
+                  🪄 Luyện Kỹ Thuật (${smProg}/6)
+                </button>
+              ` : `
+                <div class="trait-upgrade-hint" title="Có thể nâng trực tiếp lên 6⭐ bằng 50 SP hoặc Thuê Chuyên Gia">
+                  🌟 Mở khóa 6⭐ với 50 SP
+                </div>
+              `}
+            </div>
+          ` : `
+            <div class="trait-maxed-badge trickster-badge">🔮 TRICKSTER+ 6⭐ MASTER</div>
+          `}
+        </div>
       </div>
     </div>
   `;
 
-  // Gán sự kiện đổi chân thuận
+  // Gán sự kiện đổi chân thuận (Right / Left)
   const btnFoot = container.querySelector('#btnToggleFoot');
   if (btnFoot) {
     btnFoot.onclick = () => {
-      player.preferredFoot = player.preferredFoot === 'Left' ? 'Right' : 'Left';
-      _showFcsToast(`🦶 Đã chuyển chân thuận thành: ${player.preferredFoot === 'Left' ? 'Kèo Trái (Left)' : 'Kèo Phải (Right)'}!`);
+      player.preferredFootSide = (player.preferredFootSide === 'Left' || player.preferredFoot === 'Left') ? 'Right' : 'Left';
+      player.preferredFoot = player.preferredFootSide;
+      _showFcsToast(`🦶 Đã chuyển chân thuận thành: ${player.preferredFootSide === 'Left' ? 'Kèo Trái (Left)' : 'Kèo Phải (Right)'}!`);
       renderPlayerTraits(player, onUpdate);
       if (typeof onUpdate === 'function') onUpdate(player);
     };
   }
 
-  // Gán sự kiện tập chân nghịch
+  // Nâng cấp Chân Thuận bằng SP
+  const btnUpPref = container.querySelector('#btnUpgradePrefFootSP');
+  if (btnUpPref) {
+    btnUpPref.onclick = () => {
+      const res = upgradeSpecialTraitWithSP(player, 'preferredFootStars');
+      if (res && res.success) {
+        _showFcsToast(`⚡ THĂNG CẤP! Chân Thuận đã lên ${res.newLevel}⭐! (-${res.cost} SP, Còn ${res.skillPointsRemaining} SP)`);
+        renderPlayerTraits(player, onUpdate);
+        renderSkillPointsBadge(player);
+        if (typeof onUpdate === 'function') onUpdate(player);
+        if (typeof window !== 'undefined' && typeof window.updateUI === 'function') window.updateUI(player);
+      } else if (res && res.reason) {
+        _showFcsToast(`⚠️ ${res.reason}`);
+      }
+    };
+  }
+
+  // Nâng cấp Chân Nghịch bằng SP
+  const btnUpWf = container.querySelector('#btnUpgradeWfSP');
+  if (btnUpWf) {
+    btnUpWf.onclick = () => {
+      const res = upgradeSpecialTraitWithSP(player, 'weakFoot');
+      if (res && res.success) {
+        _showFcsToast(`👟 THĂNG CẤP! Chân Nghịch đã lên ${res.newLevel}⭐! ${res.title ? '✨ Kích hoạt danh hiệu ' + res.title + '!' : ''} (-${res.cost} SP, Còn ${res.skillPointsRemaining} SP)`);
+        renderPlayerTraits(player, onUpdate);
+        renderSkillPointsBadge(player);
+        if (typeof onUpdate === 'function') onUpdate(player);
+        if (typeof window !== 'undefined' && typeof window.updateUI === 'function') window.updateUI(player);
+      } else if (res && res.reason) {
+        _showFcsToast(`⚠️ ${res.reason}`);
+      }
+    };
+  }
+
+  // Nâng cấp Kỹ Thuật bằng SP
+  const btnUpSm = container.querySelector('#btnUpgradeSmSP');
+  if (btnUpSm) {
+    btnUpSm.onclick = () => {
+      const res = upgradeSpecialTraitWithSP(player, 'skillMoves');
+      if (res && res.success) {
+        _showFcsToast(`🪄 TUYỆT KỸ! Kỹ Thuật đã thăng cấp lên ${res.newLevel}⭐! ${res.title ? '🔮 Đạt cảnh giới ' + res.title + '!' : ''} (-${res.cost} SP, Còn ${res.skillPointsRemaining} SP)`);
+        renderPlayerTraits(player, onUpdate);
+        renderSkillPointsBadge(player);
+        if (typeof onUpdate === 'function') onUpdate(player);
+        if (typeof window !== 'undefined' && typeof window.updateUI === 'function') window.updateUI(player);
+      } else if (res && res.reason) {
+        _showFcsToast(`⚠️ ${res.reason}`);
+      }
+    };
+  }
+
+  // Gán sự kiện tập chân nghịch thể lực
   const btnTrainWf = container.querySelector('#btnTrainWeakFoot');
   if (btnTrainWf) {
     btnTrainWf.onclick = () => {
@@ -731,6 +848,11 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
       player.weakFootTrainProgress = (player.weakFootTrainProgress || 0) + 1;
 
       if (player.weakFootTrainProgress >= 5) {
+        const prefLimit = Math.max(1, Math.min(5, Number(player.preferredFootStars) || 4));
+        if (player.weakFoot >= prefLimit) {
+          _showFcsToast('⚠️ Chân nghịch không thể vượt quá cấp sao chân thuận. Cần nâng Chân Thuận trước!');
+          return;
+        }
         player.weakFoot = Math.min(5, (Number(player.weakFoot) || 3) + 1);
         player.weakFootTrainProgress = 0;
         _showFcsToast(`👟 ĐỈNH CAO! Kỹ năng Chân Nghịch đã thăng cấp lên ${player.weakFoot}⭐!`);
@@ -743,7 +865,7 @@ export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
     };
   }
 
-  // Gán sự kiện tập kỹ thuật Skill Moves
+  // Gán sự kiện tập kỹ thuật Skill Moves thể lực
   const btnTrainSm = container.querySelector('#btnTrainSkillMoves');
   if (btnTrainSm) {
     btnTrainSm.onclick = () => {
@@ -802,12 +924,18 @@ export function renderDetailedSubStats(player = getPlayer()) {
 
     let html = '<div class="substats-grid-inner">';
     groupConf.stats.forEach(s => {
-      const val = Math.max(1, Math.min(99, Math.round(Number(player.subStats[s.key]) || 50)));
-      const canAdd = sp > 0 && val < 99;
+      const val = Math.max(1, Math.min(110, Math.round(Number(player.subStats[s.key]) || 50)));
+      const cost = getStatUpgradeCost(val);
+      const canAdd = sp >= cost && val < 110;
+      const isBreakthrough = val >= 100;
+      const isAt99 = val === 99;
 
       let badgeClass = 'score-red';
       let fillClass = 'fill-red';
-      if (val >= 90) {
+      if (val >= 100) {
+        badgeClass = 'score-breakthrough';
+        fillClass = 'fill-breakthrough';
+      } else if (val >= 90) {
         badgeClass = 'score-gold';
         fillClass = 'fill-gold';
       } else if (val >= 80) {
@@ -821,26 +949,46 @@ export function renderDetailedSubStats(player = getPlayer()) {
         fillClass = 'fill-orange';
       }
 
+      let btnLabel = '+';
+      let btnTitle = '';
+      if (val >= 110) {
+        btnLabel = 'MAX';
+        btnTitle = 'Đã chạm trần tối thượng 110 Thần Thoại';
+      } else if (isAt99) {
+        btnLabel = '⚡ 5SP';
+        btnTitle = `⚡ Đột Phá Cảnh Giới 99 ➔ 100 (Cần 5 SP)`;
+      } else if (cost > 1) {
+        btnLabel = `+${cost}`;
+        btnTitle = canAdd ? `Nâng cấp ${s.nameVi} (${val} ➔ ${val + 1}) [${cost} SP]` : `Cần ${cost} SP để nâng cấp (Hiện có: ${sp} SP)`;
+      } else {
+        btnLabel = '+';
+        btnTitle = canAdd ? `Cộng 1 SP vào ${s.nameVi} (${val} ➔ ${val + 1})` : `Cần 1 SP để nâng cấp (Hiện có: ${sp} SP)`;
+      }
+
+      const barPercent = Math.min(100, Math.round((val / 110) * 100));
+
       html += `
-        <div class="substat-card-item">
+        <div class="substat-card-item ${isBreakthrough ? 'item-breakthrough' : ''}">
           <div class="substat-card-row">
             <span class="substat-label-vi">
               ${s.nameVi} <span class="substat-label-en">(${s.nameEn})</span>
             </span>
             <div class="substat-actions-row">
-              <span class="substat-score ${badgeClass}" id="substatVal_${s.key}">${val}</span>
-              <button class="btn-substat-plus ${canAdd ? 'can-add' : 'disabled'}"
+              <span class="substat-score ${badgeClass}" id="substatVal_${s.key}">
+                ${isBreakthrough ? '<span class="breakthrough-bolt">⚡</span>' : ''}${val}
+              </span>
+              <button class="btn-substat-plus ${isAt99 ? 'btn-breakthrough-trigger' : ''} ${canAdd ? 'can-add' : 'disabled'}"
                       id="btnSubStatPlus_${s.key}"
                       data-substat-key="${s.key}"
                       type="button"
                       ${!canAdd ? 'disabled' : ''}
-                      title="${canAdd ? `Cộng 1 SP vào ${s.nameVi} (${val} ➔ ${val + 1})` : (val >= 99 ? 'Đã đạt tối đa 99' : 'Cần Điểm Tiềm Năng (SP) để nâng cấp')}">
-                +
+                      title="${btnTitle}">
+                ${btnLabel}
               </button>
             </div>
           </div>
           <div class="substat-bar-mini-bg">
-            <div class="substat-bar-mini-fill ${fillClass}" id="substatBar_${s.key}" style="width: ${val}%;"></div>
+            <div class="substat-bar-mini-fill ${fillClass}" id="substatBar_${s.key}" style="width: ${barPercent}%;"></div>
           </div>
         </div>
       `;
@@ -861,10 +1009,15 @@ export function renderDetailedSubStats(player = getPlayer()) {
         if (res && res.success) {
           const sObj = groupConf.stats.find(item => item.key === key);
           const sName = sObj ? sObj.nameVi : key;
-          _showFcsToast(`⚡ +1 ${sName} (${res.newSubStatVal})! Còn ${res.skillPointsRemaining} SP.`);
+          if (res.isBreakthrough) {
+            _showFcsToast(`⚡ ĐỘT PHÁ CẢNH GIỚI! ${sName} đã vượt ngưỡng con người lên ${res.newSubStatVal}! (-${res.cost} SP, Còn ${res.skillPointsRemaining} SP)`);
+          } else {
+            _showFcsToast(`⚡ +1 ${sName} (${res.newSubStatVal})! (-${res.cost} SP, Còn ${res.skillPointsRemaining} SP)`);
+          }
 
           // Render lại toàn bộ subStats mà vẫn giữ nguyên trạng thái mở của panel
           renderDetailedSubStats(player);
+          renderPlayerTraits(player);
 
           // Cập nhật thẻ cầu thủ và Face Stats trên Dashboard theo thời gian thực
           if (typeof window !== 'undefined' && typeof window.updateUI === 'function') {
