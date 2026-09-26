@@ -1092,7 +1092,7 @@
 
 /* Timeline & Structured Career Log */
 .timeline-container {
-  max-height: 420px;
+  max-height: 440px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -3404,31 +3404,61 @@
 }
 
 /* =========================================================================
+   MATCHDAY BOTTOM SPLIT DUAL-COLUMN GRID (50% LOG / 50% MEDIA)
+   ========================================================================= */
+.matchday-bottom-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.matchday-split-card {
+  margin-top: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  .matchday-bottom-split-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* =========================================================================
    MEDIA & FAN REACTION HUB (TRUYỀN THÔNG & DƯ LUẬN) STYLES
    ========================================================================= */
 
 .media-buzz-overview-card {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
   background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md, 10px);
-  padding: 14px 18px;
+  padding: 10px 12px;
   backdrop-filter: blur(8px);
+}
+
+@media (max-width: 1200px) {
+  .media-buzz-overview-card {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
 }
 
 .media-buzz-stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .media-buzz-val {
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 900;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
 }
 
 .media-buzz-val.buzz-global {
@@ -3446,28 +3476,28 @@
 }
 
 .media-buzz-lbl {
-  font-size: 0.76rem;
+  font-size: 0.70rem;
   font-weight: 700;
   color: var(--text-muted, #94a3b8);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 /* Filter bar */
 .media-filters-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 
 .media-filter-btn {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-muted, #94a3b8);
-  padding: 7px 14px;
+  padding: 5px 11px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3492,7 +3522,19 @@
 .media-feed-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.media-feed-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.media-feed-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
 }
 
 .media-feed-card {

@@ -500,9 +500,6 @@
         <button class="nav-tab-btn tab-btn" data-tab="tabChronicle" onclick="switchTab('tabChronicle')">
           📜 Nhật Ký Sự Nghiệp
         </button>
-        <button class="nav-tab-btn tab-btn" data-tab="tabMediaFeed" onclick="switchTab('tabMediaFeed')">
-          📱 Dư Luận & Mạng Xã Hội
-        </button>
         <button class="nav-tab-btn tab-btn" id="btnOpenTransferMarket" onclick="openTransferMarketModal()">
           ✈️ Thị Trường Chuyển Nhượng
         </button>
@@ -722,17 +719,34 @@
           </div>
         </div>
 
-        <!-- Career Timeline & Log -->
-        <div class="card">
-          <div class="section-title">
-            <div class="section-title-left">
-              <span class="dot" style="background: var(--accent-blue);"></span>
-              <span>Nhật Ký Sự Nghiệp & Đấu Trường Đa Cấp Độ</span>
+        <!-- DUAL-COLUMN BOTTOM CONTAINER: CAREER LOG (50%) & MEDIA FEED (50%) -->
+        <div class="matchday-bottom-split-grid">
+          <!-- Cột bên trái (50%): Nhật Ký Sự Nghiệp & Đấu Trường -->
+          <div class="card matchday-split-card">
+            <div class="section-title">
+              <div class="section-title-left">
+                <span class="dot" style="background: var(--accent-blue);"></span>
+                <span>Nhật Ký Sự Nghiệp & Đấu Trường Đa Cấp Độ</span>
+              </div>
+            </div>
+
+            <div class="timeline-container" id="careerLog">
+              <!-- Timeline entries rendered via JS -->
             </div>
           </div>
 
-          <div class="timeline-container" id="careerLog">
-            <!-- Timeline entries rendered via JS -->
+          <!-- Cột bên phải (50%): Dư Luận & Mạng Xã Hội -->
+          <div class="card matchday-split-card">
+            <div class="section-title">
+              <div class="section-title-left">
+                <span class="dot" style="background: #38bdf8;"></span>
+                <span>📱 Dư Luận & Mạng Xã Hội (Media Hub)</span>
+              </div>
+            </div>
+
+            <div id="mediaFeedContainer">
+              <!-- Media reactions rendered via JS -->
+            </div>
           </div>
         </div>
       </div>
@@ -854,25 +868,6 @@
           </p>
 
           <div id="careerChronicleContainer">
-            <!-- Rendered via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 7: MEDIA & FAN REACTION FEED (TRUYỀN THÔNG & DƯ LUẬN) -->
-      <div id="tabMediaFeed" class="tab-content-panel">
-        <div class="card">
-          <div class="section-title">
-            <div class="section-title-left">
-              <span class="dot" style="background: #38bdf8;"></span>
-              <span>Trung Tâm Dư Luận & Mạng Xã Hội (Media & Fan Reaction Hub)</span>
-            </div>
-          </div>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
-            Dòng chảy tin tức trực tiếp từ các hãng thông tấn hàng đầu thế giới, phản ứng bùng nổ của cổ động viên trên mạng xã hội và phát biểu tôn vinh từ Huấn luyện viên trưởng cùng các đồng đội.
-          </p>
-
-          <div id="mediaFeedContainer">
             <!-- Rendered via JS -->
           </div>
         </div>
