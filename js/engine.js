@@ -662,7 +662,11 @@ export function simulateMatchdayRound(player, isQuickSim = false, interactiveRes
       goals: pGoals,
       assists: pAssists,
       playerGoals: pGoals,
-      playerAssists: pAssists
+      playerAssists: pAssists,
+      cleanSheets: pCS,
+      saves: pSaves,
+      tackles: pTackles,
+      rating: matchRating
     });
 
     // 1. Tìm trận đấu hiện tại trong cupFixtures / tournamentData và gán hoàn tất:

@@ -32,7 +32,8 @@ import {
   advanceCupStage,
   evaluateAndAwardCupAwards,
   getCupTournamentNames,
-  initCupIndividualTrackers
+  initCupIndividualTrackers,
+  calculateTournamentMvpScore
 } from './cupEngine.js';
 import { getPlayer } from './state.js';
 
@@ -585,6 +586,57 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
   seasonCleanSheets += lCS; seasonSaves += lSaves; seasonTackles += lTackles;
   seasonReportRows.push({ icon: "🏆", title: "[Giải VĐQG]", text: lResultText });
 
+  // Đánh giá CẦU THỦ XUẤT SẮC NHẤT GIẢI VĐQG (Player of the Season / League MVP)
+  const lgMvpTitle = `Cầu Thủ Xuất Sắc Nhất ${curLeague.name || "VĐQG"}`;
+  const isLeagueChamp = simulatedRank === 1;
+  const isLeagueRunnerUp = simulatedRank === 2;
+  const leagueMvpScore = calculateTournamentMvpScore({
+    matches: lMatches,
+    goals: lGoals,
+    assists: lAssists,
+    cleanSheets: lCS,
+    tackles: lTackles,
+    saves: lSaves,
+    avgRating: player.lastSeasonAvgRating || 0
+  }, player.position, isLeagueChamp, isLeagueRunnerUp, { isLeague: true });
+
+  const aiBenchmarkLeagueMvp = 132; // Mốc điểm chuẩn AI League: 120 – 145 điểm
+  const minLeagueMatches = Math.ceil((curLeague.totalMatches || 38) * 0.6);
+  if (leagueMvpScore >= aiBenchmarkLeagueMvp && lMatches >= minLeagueMatches) {
+    if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+    if (!player.seasonTrophiesWonThisYear.includes(lgMvpTitle)) {
+      player.seasonTrophiesWonThisYear.push(lgMvpTitle);
+      addTrophy(player, lgMvpTitle);
+      player.trophiesCount = (player.trophiesCount || 0) + 1;
+      player.careerTrophies = (player.careerTrophies || 0) + 1;
+      seasonTrophiesWonList.push(lgMvpTitle);
+      player.fame += 1000;
+      player.morale = Math.min(100, (player.morale || 70) + 10);
+      if (!player.individualAwards) player.individualAwards = [];
+      player.individualAwards.push({
+        id: `league_mvp_${player.year || 2026}`,
+        name: lgMvpTitle,
+        year: player.year || 2026,
+        age: player.age || 17,
+        stat: `${leagueMvpScore} điểm MVP`,
+        icon: "🏅"
+      });
+      seasonReportRows.push({
+        icon: "🏅",
+        title: "[Cầu Thủ Xuất Sắc Nhất Mùa]",
+        text: `🥇 ${lgMvpTitle.toUpperCase()} (${leagueMvpScore} điểm MVP!)`
+      });
+      recordChronicleMilestone(player, 'MVP_AWARD', {
+        title: lgMvpTitle,
+        desc: `Giành danh hiệu ${lgMvpTitle} với ${leagueMvpScore} điểm MVP!`,
+        badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+        badgeColor: "gold",
+        category: "individual",
+        icon: "🏅"
+      });
+    }
+  }
+
   // 2. [CÚP QUỐC GIA CHÍNH]
   let mcMatches = 0, mcGoals = 0, mcAssists = 0, mcCS = 0, mcSaves = 0, mcTackles = 0;
   const cupPowerRoll = combinedRating + (Math.random() * 20 - 10);
@@ -632,10 +684,12 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
   seasonCleanSheets += mcCS; seasonSaves += mcSaves; seasonTackles += mcTackles;
   seasonReportRows.push({ icon: "🛡️", title: "[Cúp Quốc Gia]", text: mcResult });
 
-  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo Cúp Quốc Gia
+  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo & MVP Cúp Quốc Gia
   const dCupName = curLeague.domesticCup || "Cúp Quốc Gia";
   const dScorerTitle = `Vua Phá Lưới ${dCupName}`;
   const dPlaymakerTitle = `Vua Kiến Tạo ${dCupName}`;
+  const dCupMvpTitle = `Cầu Thủ Xuất Sắc Nhất ${dCupName}`;
+
   if (mcGoals >= 5) {
     if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
     if (!player.seasonTrophiesWonThisYear.includes(dScorerTitle)) {
@@ -656,6 +710,53 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
       player.fame += 350;
       player.morale = Math.min(100, (player.morale || 70) + 6);
       seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo Cúp QG]", text: `🎯 VUA KIẾN TẠO ${dCupName} (${mcAssists} kiến tạo!)` });
+    }
+  }
+
+  const isDomesticCupChamp = mcResult.includes("VÔ ĐỊCH");
+  const isDomesticCupRunnerUp = mcResult.includes("Á Quân");
+  const dCupMvpScore = calculateTournamentMvpScore({
+    matches: mcMatches,
+    goals: mcGoals,
+    assists: mcAssists,
+    cleanSheets: mcCS,
+    tackles: mcTackles,
+    saves: mcSaves,
+    avgRating: player.lastSeasonAvgRating || 0
+  }, player.position, isDomesticCupChamp, isDomesticCupRunnerUp, { isCup: true });
+
+  if (dCupMvpScore >= 92 && mcMatches >= 3) {
+    if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+    if (!player.seasonTrophiesWonThisYear.includes(dCupMvpTitle)) {
+      player.seasonTrophiesWonThisYear.push(dCupMvpTitle);
+      addTrophy(player, dCupMvpTitle);
+      player.trophiesCount = (player.trophiesCount || 0) + 1;
+      player.careerTrophies = (player.careerTrophies || 0) + 1;
+      seasonTrophiesWonList.push(dCupMvpTitle);
+      player.fame += 750;
+      player.morale = Math.min(100, (player.morale || 70) + 10);
+      if (!player.individualAwards) player.individualAwards = [];
+      player.individualAwards.push({
+        id: `domestic_cup_mvp_${player.year || 2026}`,
+        name: dCupMvpTitle,
+        year: player.year || 2026,
+        age: player.age || 17,
+        stat: `${dCupMvpScore} điểm MVP`,
+        icon: "🏅"
+      });
+      seasonReportRows.push({
+        icon: "🏅",
+        title: "[Cầu Thủ XS Nhất Cúp QG]",
+        text: `🥇 ${dCupMvpTitle.toUpperCase()} (${dCupMvpScore} điểm MVP!)`
+      });
+      recordChronicleMilestone(player, 'MVP_AWARD', {
+        title: dCupMvpTitle,
+        desc: `Giành danh hiệu ${dCupMvpTitle} với ${dCupMvpScore} điểm MVP!`,
+        badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+        badgeColor: "gold",
+        category: "individual",
+        icon: "🏅"
+      });
     }
   }
 
@@ -902,10 +1003,58 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
         seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo UCL]", text: `🎯 VUA KIẾN TẠO ${c1Name} (${eAssists} kiến tạo!)` });
       }
     }
+    const isC1Champ = eResult.includes("VÔ ĐỊCH");
+    const isC1RunnerUp = eResult.includes("Á Quân");
+    const c1MvpTitle = "Cầu Thủ Xuất Sắc Nhất UEFA Champions League";
+    const c1MvpScore = calculateTournamentMvpScore({
+      matches: eMatches,
+      goals: eGoals,
+      assists: eAssists,
+      cleanSheets: eCS,
+      tackles: eTackles,
+      saves: eSaves,
+      avgRating: player.lastSeasonAvgRating || 0
+    }, player.position, isC1Champ, isC1RunnerUp, { isCup: true });
+
+    if (c1MvpScore >= 122 && eMatches >= 7) {
+      if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+      if (!player.seasonTrophiesWonThisYear.includes(c1MvpTitle)) {
+        player.seasonTrophiesWonThisYear.push(c1MvpTitle);
+        addTrophy(player, c1MvpTitle);
+        player.trophiesCount = (player.trophiesCount || 0) + 1;
+        player.careerTrophies = (player.careerTrophies || 0) + 1;
+        seasonTrophiesWonList.push(c1MvpTitle);
+        player.fame += 1200;
+        player.morale = Math.min(100, (player.morale || 70) + 10);
+        if (!player.individualAwards) player.individualAwards = [];
+        player.individualAwards.push({
+          id: `ucl_mvp_${player.year || 2026}`,
+          name: c1MvpTitle,
+          year: player.year || 2026,
+          age: player.age || 17,
+          stat: `${c1MvpScore} điểm MVP`,
+          icon: "🏅"
+        });
+        seasonReportRows.push({
+          icon: "🏅",
+          title: "[Cầu Thủ XS Nhất UCL]",
+          text: `🥇 ${c1MvpTitle.toUpperCase()} (${c1MvpScore} điểm MVP!)`
+        });
+        recordChronicleMilestone(player, 'MVP_AWARD', {
+          title: c1MvpTitle,
+          desc: `Giành danh hiệu ${c1MvpTitle} với ${c1MvpScore} điểm MVP!`,
+          badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+          badgeColor: "gold",
+          category: "individual",
+          icon: "🏅"
+        });
+      }
+    }
   } else if (player.currentEuroStatus === "C2") {
     const c2Name = curLeague.continentalC2 || "UEFA Europa League";
     const c2ScorerTitle = "Vua Phá Lưới UEFA Europa League";
     const c2PlaymakerTitle = "Vua Kiến Tạo UEFA Europa League";
+    const c2MvpTitle = "Cầu Thủ Xuất Sắc Nhất UEFA Europa League";
     if (eGoals >= 8) {
       if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
       if (!player.seasonTrophiesWonThisYear.includes(c2ScorerTitle)) {
@@ -928,10 +1077,58 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
         seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo UEL]", text: `🎯 VUA KIẾN TẠO ${c2Name} (${eAssists} kiến tạo!)` });
       }
     }
+
+    const isC2Champ = eResult.includes("VÔ ĐỊCH");
+    const isC2RunnerUp = eResult.includes("Á Quân");
+    const c2MvpScore = calculateTournamentMvpScore({
+      matches: eMatches,
+      goals: eGoals,
+      assists: eAssists,
+      cleanSheets: eCS,
+      tackles: eTackles,
+      saves: eSaves,
+      avgRating: player.lastSeasonAvgRating || 0
+    }, player.position, isC2Champ, isC2RunnerUp, { isCup: true });
+
+    if (c2MvpScore >= 108 && eMatches >= 6) {
+      if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+      if (!player.seasonTrophiesWonThisYear.includes(c2MvpTitle)) {
+        player.seasonTrophiesWonThisYear.push(c2MvpTitle);
+        addTrophy(player, c2MvpTitle);
+        player.trophiesCount = (player.trophiesCount || 0) + 1;
+        player.careerTrophies = (player.careerTrophies || 0) + 1;
+        seasonTrophiesWonList.push(c2MvpTitle);
+        player.fame += 850;
+        player.morale = Math.min(100, (player.morale || 70) + 9);
+        if (!player.individualAwards) player.individualAwards = [];
+        player.individualAwards.push({
+          id: `uel_mvp_${player.year || 2026}`,
+          name: c2MvpTitle,
+          year: player.year || 2026,
+          age: player.age || 17,
+          stat: `${c2MvpScore} điểm MVP`,
+          icon: "🏅"
+        });
+        seasonReportRows.push({
+          icon: "🏅",
+          title: "[Cầu Thủ XS Nhất UEL]",
+          text: `🥇 ${c2MvpTitle.toUpperCase()} (${c2MvpScore} điểm MVP!)`
+        });
+        recordChronicleMilestone(player, 'MVP_AWARD', {
+          title: c2MvpTitle,
+          desc: `Giành danh hiệu ${c2MvpTitle} với ${c2MvpScore} điểm MVP!`,
+          badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+          badgeColor: "gold",
+          category: "individual",
+          icon: "🏅"
+        });
+      }
+    }
   } else if (player.currentEuroStatus === "C3") {
     const c3Name = curLeague.continentalC3 || "UEFA Conference League";
     const c3ScorerTitle = "Vua Phá Lưới UEFA Conference League";
     const c3PlaymakerTitle = "Vua Kiến Tạo UEFA Conference League";
+    const c3MvpTitle = "Cầu Thủ Xuất Sắc Nhất UEFA Conference League";
     if (eGoals >= 7) {
       if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
       if (!player.seasonTrophiesWonThisYear.includes(c3ScorerTitle)) {
@@ -952,6 +1149,53 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
         player.fame += 400;
         player.morale = Math.min(100, (player.morale || 70) + 6);
         seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo UECL]", text: `🎯 VUA KIẾN TẠO ${c3Name} (${eAssists} kiến tạo!)` });
+      }
+    }
+
+    const isC3Champ = eResult.includes("VÔ ĐỊCH");
+    const isC3RunnerUp = eResult.includes("Á Quân");
+    const c3MvpScore = calculateTournamentMvpScore({
+      matches: eMatches,
+      goals: eGoals,
+      assists: eAssists,
+      cleanSheets: eCS,
+      tackles: eTackles,
+      saves: eSaves,
+      avgRating: player.lastSeasonAvgRating || 0
+    }, player.position, isC3Champ, isC3RunnerUp, { isCup: true });
+
+    if (c3MvpScore >= 98 && eMatches >= 5) {
+      if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+      if (!player.seasonTrophiesWonThisYear.includes(c3MvpTitle)) {
+        player.seasonTrophiesWonThisYear.push(c3MvpTitle);
+        addTrophy(player, c3MvpTitle);
+        player.trophiesCount = (player.trophiesCount || 0) + 1;
+        player.careerTrophies = (player.careerTrophies || 0) + 1;
+        seasonTrophiesWonList.push(c3MvpTitle);
+        player.fame += 700;
+        player.morale = Math.min(100, (player.morale || 70) + 8);
+        if (!player.individualAwards) player.individualAwards = [];
+        player.individualAwards.push({
+          id: `uecl_mvp_${player.year || 2026}`,
+          name: c3MvpTitle,
+          year: player.year || 2026,
+          age: player.age || 17,
+          stat: `${c3MvpScore} điểm MVP`,
+          icon: "🏅"
+        });
+        seasonReportRows.push({
+          icon: "🏅",
+          title: "[Cầu Thủ XS Nhất UECL]",
+          text: `🥇 ${c3MvpTitle.toUpperCase()} (${c3MvpScore} điểm MVP!)`
+        });
+        recordChronicleMilestone(player, 'MVP_AWARD', {
+          title: c3MvpTitle,
+          desc: `Giành danh hiệu ${c3MvpTitle} với ${c3MvpScore} điểm MVP!`,
+          badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+          badgeColor: "gold",
+          category: "individual",
+          icon: "🏅"
+        });
       }
     }
   }
@@ -1125,6 +1369,58 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
             seasonReportRows.push({ icon: "🎯", title: `[Vua Kiến Tạo ${tourneyName}]`, text: `🎯 VUA KIẾN TẠO ${tourneyName} (${intlAssistsThisYear} kiến tạo!)` });
           }
         }
+
+        const isIntlChamp = intlResultText.includes("VÔ ĐỊCH");
+        const isIntlRunnerUp = intlResultText.includes("Á Quân");
+        const intlMvpTitle = (tourneyName.includes("World Cup"))
+          ? "Quả Bóng Vàng FIFA World Cup (World Cup Best Player)"
+          : `Cầu Thủ Xuất Sắc Nhất ${tourneyName}`;
+
+        const intlMvpScore = calculateTournamentMvpScore({
+          matches: annualCaps,
+          goals: intlGoalsThisYear,
+          assists: intlAssistsThisYear,
+          cleanSheets: intlCleanSheetsThisYear,
+          tackles: intlTacklesThisYear,
+          saves: intlSavesThisYear,
+          avgRating: player.lastSeasonAvgRating || 0
+        }, player.position, isIntlChamp, isIntlRunnerUp, { isCup: true });
+
+        const aiBenchmarkIntlMvp = tourneyName.includes("World Cup") ? 115 : 108; // World Cup / EURO: 100 – 125 điểm
+        if (intlMvpScore >= aiBenchmarkIntlMvp && annualCaps >= 4) {
+          if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+          if (!player.seasonTrophiesWonThisYear.includes(intlMvpTitle)) {
+            player.seasonTrophiesWonThisYear.push(intlMvpTitle);
+            addTrophy(player, intlMvpTitle);
+            player.trophiesCount = (player.trophiesCount || 0) + 1;
+            player.careerTrophies = (player.careerTrophies || 0) + 1;
+            seasonTrophiesWonList.push(intlMvpTitle);
+            player.fame += 1200;
+            player.morale = Math.min(100, (player.morale || 70) + 10);
+            if (!player.individualAwards) player.individualAwards = [];
+            player.individualAwards.push({
+              id: `intl_mvp_${player.year || 2026}`,
+              name: intlMvpTitle,
+              year: player.year || 2026,
+              age: player.age || 17,
+              stat: `${intlMvpScore} điểm MVP`,
+              icon: "🏅"
+            });
+            seasonReportRows.push({
+              icon: "🏅",
+              title: `[Cầu Thủ XS Nhất ${tourneyName}]`,
+              text: `🥇 ${intlMvpTitle.toUpperCase()} (${intlMvpScore} điểm MVP!)`
+            });
+            recordChronicleMilestone(player, 'MVP_AWARD', {
+              title: intlMvpTitle,
+              desc: `Giành danh hiệu ${intlMvpTitle} với ${intlMvpScore} điểm MVP!`,
+              badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+              badgeColor: "gold",
+              category: "individual",
+              icon: "🏅"
+            });
+          }
+        }
       }
     } else {
       if (pLine === "FW") {
@@ -1197,11 +1493,17 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
     if (cupAwards?.domestic?.wonPlaymaker) {
       seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo Cúp QG]", text: `🎯 ${cupAwards.domestic.topPlaymakerTitle} (${cupAwards.domestic.playerAssists} kiến tạo!)` });
     }
+    if (cupAwards?.domestic?.wonMvp) {
+      seasonReportRows.push({ icon: "🏅", title: "[Cầu Thủ XS Nhất Cúp QG]", text: `🥇 ${cupAwards.domestic.mvpTitle} (${cupAwards.domestic.playerMvpScore} điểm MVP!)` });
+    }
     if (cupAwards?.continental?.wonScorer) {
       seasonReportRows.push({ icon: "👟", title: "[Vua Phá Lưới Cúp Châu Âu]", text: `🥇 ${cupAwards.continental.topScorerTitle} (${cupAwards.continental.playerGoals} bàn thắng!)` });
     }
     if (cupAwards?.continental?.wonPlaymaker) {
       seasonReportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo Cúp Châu Âu]", text: `🎯 ${cupAwards.continental.topPlaymakerTitle} (${cupAwards.continental.playerAssists} kiến tạo!)` });
+    }
+    if (cupAwards?.continental?.wonMvp) {
+      seasonReportRows.push({ icon: "🏅", title: "[Cầu Thủ XS Nhất Cúp Châu Âu]", text: `🥇 ${cupAwards.continental.mvpTitle} (${cupAwards.continental.playerMvpScore} điểm MVP!)` });
     }
   }
 
@@ -1673,7 +1975,84 @@ export function checkAndAwardIndividualYouthAwards(player) {
     });
   }
 
-  return { topScorer: isTopScorer, topPlaymaker: isTopPlaymaker };
+  // 3. Kiểm tra CẦU THỦ XUẤT SẮC NHẤT GIẢI TRẺ U19 (MVP)
+  const isChampion = Boolean(p.wonLeagueThisSeason || (p.seasonTrophiesWonThisYear || []).includes("Giải VĐQG U19 Academy"));
+  const secondTable = p.leagueTable && p.leagueTable[1];
+  const activeClub = getPlayerActiveClub(p);
+  const isRunnerUp = !isChampion && Boolean(
+    secondTable && (
+      secondTable.isPlayerClub ||
+      isSameClub(secondTable, activeClub) ||
+      (p.club && isSameClub(secondTable, p.club)) ||
+      (p.academy && isSameClub(secondTable, p.academy))
+    )
+  );
+
+  const playedLeagueMatches = (p.currentSeasonStats?.matches !== undefined) ? p.currentSeasonStats.matches : 22;
+  const leagueCleanSheets = p.currentSeasonStats?.cleanSheets || 0;
+  const leagueTackles = p.currentSeasonStats?.tackles || 0;
+  const leagueSaves = p.currentSeasonStats?.saves || 0;
+
+  const youthMvpScore = calculateTournamentMvpScore({
+    matches: playedLeagueMatches,
+    goals: seasonGoals,
+    assists: seasonAssists,
+    cleanSheets: leagueCleanSheets,
+    tackles: leagueTackles,
+    saves: leagueSaves,
+    avgRating: p.lastSeasonAvgRating || p.matchRating || 0
+  }, p.position, isChampion, isRunnerUp, { isLeague: true });
+
+  const aiBenchmarkYouthMvp = 118; // Mốc điểm chuẩn AI giải trẻ 115 - 130 điểm
+  const hasMinMatches = playedLeagueMatches >= 13; // >= 60% của 22 trận
+  const isTopMvp = (youthMvpScore >= aiBenchmarkYouthMvp) && hasMinMatches;
+
+  const mvpTitle = "Cầu Thủ Xuất Sắc Nhất Giải Trẻ U19";
+  if (isTopMvp && !p.seasonTrophiesWonThisYear.includes(mvpTitle)) {
+    p.seasonTrophiesWonThisYear.push(mvpTitle);
+    addTrophy(p, mvpTitle);
+    p.trophiesCount = (p.trophiesCount || 0) + 1;
+    p.careerTrophies = (p.careerTrophies || 0) + 1;
+    p.fame = (p.fame || 0) + 600;
+    p.morale = Math.min(100, (p.morale || 70) + 10);
+
+    p.individualAwards.push({
+      id: `youth_mvp_${p.year || 2026}`,
+      name: mvpTitle,
+      year: p.year || 2026,
+      age: p.age || 16,
+      stat: `${youthMvpScore} điểm MVP`,
+      icon: "🏅"
+    });
+
+    p.records.push({
+      id: `youth_mvp_${p.year || 2026}`,
+      title: mvpTitle,
+      holder: p.name || "Cầu thủ",
+      value: `${youthMvpScore} điểm MVP`,
+      year: p.year || 2026
+    });
+
+    p.logs.unshift({
+      year: p.year || 2026,
+      age: p.age || 16,
+      title: `🏅 ${mvpTitle.toUpperCase()}!`,
+      text: `Màn trình diễn áp đảo toàn diện với ${youthMvpScore} điểm MVP đưa bạn lên đỉnh vinh quang với danh hiệu Cầu Thủ Xuất Sắc Nhất Giải Trẻ U19! (+600 Fame)`,
+      type: "trophy-win",
+      timestamp: Date.now()
+    });
+
+    recordChronicleMilestone(p, 'MVP_AWARD', {
+      title: mvpTitle,
+      desc: `Giành danh hiệu Cầu Thủ Xuất Sắc Nhất Giải Trẻ U19 với ${youthMvpScore} điểm MVP!`,
+      badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+      badgeColor: "gold",
+      category: "individual",
+      icon: "🏅"
+    });
+  }
+
+  return { topScorer: isTopScorer, topPlaymaker: isTopPlaymaker, mvp: isTopMvp };
 }
 
 /* =========================================================================
@@ -1800,8 +2179,11 @@ export function simulateAcademyRound(player, actionTitle, actionReport) {
   if (indAwards.topPlaymaker && !seasonTrophiesWonList.includes("Vua Kiến Tạo Giải Trẻ (Top Playmaker)")) {
     seasonTrophiesWonList.push("Vua Kiến Tạo Giải Trẻ (Top Playmaker)");
   }
+  if (indAwards.mvp && !seasonTrophiesWonList.includes("Cầu Thủ Xuất Sắc Nhất Giải Trẻ U19")) {
+    seasonTrophiesWonList.push("Cầu Thủ Xuất Sắc Nhất Giải Trẻ U19");
+  }
 
-  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo Cúp Trẻ Quốc Gia
+  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo & MVP Cúp Trẻ Quốc Gia
   const dYouthG = Math.max(cupG, player.cupStats?.domesticCup?.goals || 0);
   const dYouthA = Math.max(cupA, player.cupStats?.domesticCup?.assists || 0);
   let wonYouthCupScorer = false;
@@ -1830,7 +2212,29 @@ export function simulateAcademyRound(player, actionTitle, actionReport) {
     }
   }
 
-  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo UEFA Youth League
+  const dYouthMvpScore = calculateTournamentMvpScore({
+    matches: cupMatches,
+    goals: dYouthG,
+    assists: dYouthA,
+    cleanSheets: Math.max(cupCS, player.cupStats?.domesticCup?.cleanSheets || 0),
+    tackles: Math.max(cupTk, player.cupStats?.domesticCup?.tackles || 0),
+    saves: Math.max(cupSv, player.cupStats?.domesticCup?.saves || 0),
+    avgRating: player.lastSeasonAvgRating || 0
+  }, player.position, true, false, { isCup: true });
+
+  if (dYouthMvpScore >= 85 && cupMatches >= 3) {
+    const tName = "Cầu Thủ Xuất Sắc Nhất Cúp Trẻ Quốc Gia U19";
+    if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+    if (!player.seasonTrophiesWonThisYear.includes(tName)) {
+      player.seasonTrophiesWonThisYear.push(tName);
+      addTrophy(player, tName);
+      seasonTrophiesWonList.push(tName);
+      player.fame += 500;
+      player.morale = Math.min(100, (player.morale || 70) + 10);
+    }
+  }
+
+  // Đánh giá Vua Phá Lưới & Vua Kiến Tạo & MVP UEFA Youth League
   const uylGVal = Math.max(uclG, player.cupStats?.continentalCup?.goals || 0);
   const uylAVal = Math.max(uclA, player.cupStats?.continentalCup?.assists || 0);
   let wonUylScorer = false;
@@ -1859,12 +2263,40 @@ export function simulateAcademyRound(player, actionTitle, actionReport) {
     }
   }
 
+  const uylMvpScore = calculateTournamentMvpScore({
+    matches: uclMatches,
+    goals: uylGVal,
+    assists: uylAVal,
+    cleanSheets: Math.max(uclCS, player.cupStats?.continentalCup?.cleanSheets || 0),
+    tackles: Math.max(uclTk, player.cupStats?.continentalCup?.tackles || 0),
+    saves: Math.max(uclSv, player.cupStats?.continentalCup?.saves || 0),
+    avgRating: player.lastSeasonAvgRating || 0
+  }, player.position, isWonYouthC1, reachesFinal && !isWonYouthC1, { isCup: true });
+
+  if (uylMvpScore >= 88 && reachesFinal) {
+    const tName = "Cầu Thủ Xuất Sắc Nhất UEFA Youth League";
+    if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+    if (!player.seasonTrophiesWonThisYear.includes(tName)) {
+      player.seasonTrophiesWonThisYear.push(tName);
+      addTrophy(player, tName);
+      seasonTrophiesWonList.push(tName);
+      player.fame += 650;
+      player.morale = Math.min(100, (player.morale || 70) + 10);
+    }
+  }
+
   // Chấm giải thưởng cúp bổ sung nếu có dữ liệu cupTrackers
   const cupAwards = evaluateAndAwardCupAwards(player, 'all', { seasonTrophiesWonList });
   if (cupAwards?.domestic?.wonScorer) wonYouthCupScorer = true;
   if (cupAwards?.domestic?.wonPlaymaker) wonYouthCupPlaymaker = true;
+  if (cupAwards?.domestic?.wonMvp && !seasonTrophiesWonList.includes(cupAwards.domestic.mvpTitle)) {
+    seasonTrophiesWonList.push(cupAwards.domestic.mvpTitle);
+  }
   if (cupAwards?.continental?.wonScorer) wonUylScorer = true;
   if (cupAwards?.continental?.wonPlaymaker) wonUylPlaymaker = true;
+  if (cupAwards?.continental?.wonMvp && !seasonTrophiesWonList.includes(cupAwards.continental.mvpTitle)) {
+    seasonTrophiesWonList.push(cupAwards.continental.mvpTitle);
+  }
 
   const seasonTrophiesWon = seasonTrophiesWonList.length;
   player.careerTrophies = (player.careerTrophies || 0) + seasonTrophiesWon;
@@ -4236,6 +4668,78 @@ export function advanceSummerTournamentMatch(player, isQuickSim = false, arenaRe
       }
     }
 
+    // 3. Đánh giá CẦU THỦ XUẤT SẮC NHẤT GIẢI ĐẤU (TOURNAMENT MVP)
+    const mvpTitle = tName.includes("World Cup")
+      ? "Quả Bóng Vàng FIFA World Cup (World Cup Best Player)"
+      : `Cầu Thủ Xuất Sắc Nhất ${tName}`;
+
+    const isChamp = Boolean(tourney.wonTrophy);
+    const isRunnerUp = !isChamp && Boolean(tourney.brackets?.final && tourney.brackets.final.winner && !tourney.wonTrophy);
+    const summerMatches = tourney.playerStats?.matches || 0;
+
+    const intlMvpScore = calculateTournamentMvpScore({
+      matches: summerMatches,
+      goals: tGoals,
+      assists: tAssists,
+      cleanSheets: player.cupStats?.summerTournament?.cleanSheets || 0,
+      tackles: player.cupStats?.summerTournament?.tackles || 0,
+      saves: player.cupStats?.summerTournament?.saves || 0,
+      avgRating: player.lastSeasonAvgRating || 7.5
+    }, player.position, isChamp, isRunnerUp, { isCup: true });
+
+    const aiBenchmarkMvp = tName.includes("World Cup") ? 115 : 108; // World Cup / EURO: 100 – 125 điểm
+    const wonMvp = intlMvpScore >= aiBenchmarkMvp && summerMatches >= 4;
+
+    if (wonMvp) {
+      if (!player.seasonTrophiesWonThisYear) player.seasonTrophiesWonThisYear = [];
+      if (!player.seasonTrophiesWonThisYear.includes(mvpTitle)) {
+        player.seasonTrophiesWonThisYear.push(mvpTitle);
+        addTrophy(player, mvpTitle);
+        player.fame = (player.fame || 0) + 1200;
+        player.morale = Math.min(100, (player.morale || 70) + 10);
+
+        if (!player.individualAwards) player.individualAwards = [];
+        player.individualAwards.push({
+          id: `summer_mvp_${player.year || 2026}`,
+          name: mvpTitle,
+          year: player.year || 2026,
+          age: player.age || 16,
+          stat: `${intlMvpScore} điểm MVP`,
+          icon: "🏅"
+        });
+
+        if (!player.records) player.records = [];
+        player.records.push({
+          id: `summer_mvp_${player.year || 2026}`,
+          title: mvpTitle,
+          holder: player.name || "Cầu thủ",
+          value: `${intlMvpScore} điểm MVP`,
+          year: player.year || 2026
+        });
+
+        if (!player.logs) player.logs = [];
+        player.logs.unshift({
+          year: player.year || 2026,
+          age: player.age || 16,
+          title: `🏅 ${mvpTitle.toUpperCase()}!`,
+          text: `Vinh quang tột đỉnh! Bạn chính thức được bầu chọn là Cầu Thủ Xuất Sắc Nhất ${tName} với ${intlMvpScore} điểm MVP vượt trội! (+1200 Fame)`,
+          type: "trophy-win",
+          timestamp: Date.now()
+        });
+
+        if (typeof recordChronicleMilestone === 'function') {
+          recordChronicleMilestone(player, 'MVP_AWARD', {
+            title: mvpTitle,
+            desc: `Giành danh hiệu ${mvpTitle} với ${intlMvpScore} điểm MVP!`,
+            badge: "🏅 CẦU THỦ XUẤT SẮC NHẤT",
+            badgeColor: "gold",
+            category: "individual",
+            icon: "🏅"
+          });
+        }
+      }
+    }
+
     tourney.awards = {
       topScorer: {
         title: scorerTitle,
@@ -4248,6 +4752,12 @@ export function advanceSummerTournamentMatch(player, isQuickSim = false, arenaRe
         winnerName: wonPlaymaker ? `${player.name} (BẠN)` : "Nhạc Trưởng Quốc Tế",
         stat: wonPlaymaker ? tAssists : baselineAssistGoals,
         isPlayer: wonPlaymaker
+      },
+      mvp: {
+        title: mvpTitle,
+        winnerName: wonMvp ? `${player.name} (BẠN)` : "Cầu Thủ Xuất Sắc Nhất",
+        stat: wonMvp ? `${intlMvpScore}đ` : `${aiBenchmarkMvp}đ`,
+        isPlayer: wonMvp
       }
     };
   }

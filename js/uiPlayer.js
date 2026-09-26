@@ -101,8 +101,9 @@ export function renderTrophyShowcase(player) {
     const isBallonDor = tName.includes("Quả Bóng Vàng");
     const isScorer = tName.includes("Vua Phá Lưới") || tName.includes("Chiếc Giày Vàng");
     const isPlaymaker = tName.includes("Vua Kiến Tạo");
-    const isAward = isBallonDor || isScorer || isPlaymaker || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
-    const icon = isBallonDor ? '👑' : (isScorer ? '👟' : (isPlaymaker ? '🎯' : (isAward ? '🌟' : '🏆')));
+    const isMvp = tName.includes("Cầu Thủ Xuất Sắc Nhất") || tName.includes("Best Player") || tName.includes("Player of the Season") || tName.includes("MVP");
+    const isAward = isBallonDor || isScorer || isPlaymaker || isMvp || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
+    const icon = isBallonDor ? '👑' : (isMvp ? '🏅' : (isScorer ? '👟' : (isPlaymaker ? '🎯' : (isAward ? '🌟' : '🏆'))));
     const badge = document.createElement('div');
     badge.className = `trophy-badge ${isAward ? 'award-badge' : ''}`;
     badge.innerHTML = `${icon} ${tName} <strong style="color:#fff;">x${player.trophiesTally[tName]}</strong>`;

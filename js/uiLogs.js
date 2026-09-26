@@ -239,9 +239,15 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
     ];
     const uniqueWonTrophies = Array.from(new Set(allWonThisYear));
 
-    // Lọc danh sách Vua Phá Lưới & Vua Kiến Tạo đã đạt được mùa này
+    // Lọc danh sách Vua Phá Lưới & Vua Kiến Tạo & Cầu Thủ Xuất Sắc Nhất đã đạt được mùa này
     const wonTopScorerTitles = uniqueWonTrophies.filter(t => typeof t === 'string' && (t.includes("Vua Phá Lưới") || t.includes("Top Scorer")));
     const wonTopPlaymakerTitles = uniqueWonTrophies.filter(t => typeof t === 'string' && (t.includes("Vua Kiến Tạo") || t.includes("Top Playmaker")));
+    const wonMvpTitles = uniqueWonTrophies.filter(t => typeof t === 'string' && (
+      t.includes("Cầu Thủ Xuất Sắc Nhất") ||
+      t.includes("World Cup Best Player") ||
+      t.includes("Player of the Season") ||
+      t.includes("MVP")
+    ));
     const wonMajorAnnualAwards = uniqueWonTrophies.filter(t => typeof t === 'string' && (
       t.includes("Quả Bóng Vàng") || 
       t.includes("Chiếc Giày Vàng") || 
@@ -250,6 +256,19 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
     ));
 
     let awardsItemsHtml = '';
+
+    if (wonMvpTitles.length > 0) {
+      wonMvpTitles.forEach(title => {
+        awardsItemsHtml += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+            <span>🏅 <strong>${title}:</strong></span>
+            <span style="font-weight: 800; color: #38bdf8; background: rgba(56,189,248,0.2); padding: 2px 8px; border-radius: 4px;">
+              🥇 CHIẾN THẮNG
+            </span>
+          </div>
+        `;
+      });
+    }
 
     if (wonTopScorerTitles.length > 0) {
       wonTopScorerTitles.forEach(title => {
@@ -322,7 +341,7 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
     personalAwardsCard.style.cssText = "background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(236, 72, 153, 0.08)); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 8px; padding: 12px 14px; text-align: left;";
     personalAwardsCard.innerHTML = `
       <div style="font-weight: 800; font-size: 0.95rem; color: #c084fc; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-        <span>👟</span> <span>CÁC GIẢI THƯỞNG CÁ NHÂN DANH GIÁ</span>
+        <span>🏅</span> <span>CÁC GIẢI THƯỞNG CÁ NHÂN DANH GIÁ</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem;">
         ${awardsItemsHtml}

@@ -618,6 +618,14 @@ export function renderTournamentBrackets(player, activeType = null) {
                     ${currentBracket.awards.topPlaymaker.winnerName} (${currentBracket.awards.topPlaymaker.stat || currentBracket.awards.topPlaymaker.assists || 0}🎯)
                   </span>
                 </div>
+                ${currentBracket.awards.mvp ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; padding-top:3px; border-top:1px dashed rgba(255,255,255,0.1);">
+                  <span style="color:#38bdf8; font-weight:800;">🏅 Xuất Sắc Nhất:</span>
+                  <span style="${currentBracket.awards.mvp.isPlayer ? 'color:#38bdf8; font-weight:900; background:rgba(56,189,248,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.mvp.winnerName} (${currentBracket.awards.mvp.stat || (currentBracket.awards.mvp.score + 'đ')})
+                  </span>
+                </div>
+                ` : ''}
               </div>
             ` : ''}
           </div>
@@ -797,6 +805,14 @@ export function renderTournamentBrackets(player, activeType = null) {
                     ${currentBracket.awards.topPlaymaker.winnerName} (${currentBracket.awards.topPlaymaker.stat || currentBracket.awards.topPlaymaker.assists || 0}🎯)
                   </span>
                 </div>
+                ${currentBracket.awards.mvp ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; padding-top:3px; border-top:1px dashed rgba(255,255,255,0.1);">
+                  <span style="color:#38bdf8; font-weight:800;">🏅 Xuất Sắc Nhất:</span>
+                  <span style="${currentBracket.awards.mvp.isPlayer ? 'color:#38bdf8; font-weight:900; background:rgba(56,189,248,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.mvp.winnerName} (${currentBracket.awards.mvp.stat || (currentBracket.awards.mvp.score + 'đ')})
+                  </span>
+                </div>
+                ` : ''}
               </div>
             ` : ''}
           </div>
