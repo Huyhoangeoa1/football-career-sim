@@ -1114,9 +1114,11 @@ const DF_MOMENT_BANK = [
   }
 ];
 
-const FW_MF_MOMENT_BANK = [
+export const FW_MF_MOMENT_BANK = [
   {
     title: 'Phản Công Thần Tốc Góc Rộng',
+    category: 'HYBRID',
+    weights: { FW: 20, MF: 12 },
     desc: 'Bạn nhận đường chuyền vượt tuyến và bứt tốc băng xuống đối mặt cặp trung vệ đối phương!',
     ballPitchPercent: 75,
     choices: [
@@ -1138,6 +1140,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: 'Rê Bóng Đột Phá Nách Trung Lộ',
+    category: 'GOAL',
+    weights: { FW: 22, MF: 10 },
     desc: 'Trận đấu đang ở thế giằng co, bạn cầm bóng trước rìa vòng cấm địa!',
     ballPitchPercent: 80,
     choices: [
@@ -1159,6 +1163,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: 'Đá Phạt Trực Tiếp Nguy Hiểm',
+    category: 'PLAYMAKING',
+    weights: { FW: 10, MF: 24 },
     desc: 'Đội nhà được hưởng quả phạt hàng rào cự ly 22 mét. Hàng rào đối phương đang dựng đặc quánh!',
     ballPitchPercent: 85,
     choices: [
@@ -1180,6 +1186,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: 'Thống Trị Nhịp Độ Tuyến Giữa',
+    category: 'PLAYMAKING',
+    weights: { FW: 4, MF: 32 },
     desc: 'Trận đại chiến đang diễn ra căng thẳng. Bạn nắm vai trò nhạc trưởng điều tiết thế trận!',
     ballPitchPercent: 65,
     choices: [
@@ -1194,6 +1202,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: 'Penalty Định Đoạt Danh Hiệu',
+    category: 'GOAL',
+    weights: { FW: 24, MF: 8 },
     desc: 'Phút 90+2, bạn bước lên chấm 11m trước sức ép nghẹt thở của hơn 80.000 khán giả!',
     ballPitchPercent: 90,
     choices: [
@@ -1226,6 +1236,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: 'Đối Mặt 1 vs 1 Thủ Môn',
+    category: 'GOAL',
+    weights: { FW: 28, MF: 6 },
     desc: 'Phá bẫy việt vị thành công! Bạn thoát xuống đối mặt trực tiếp với thủ môn!',
     ballPitchPercent: 88,
     choices: [
@@ -1240,6 +1252,8 @@ const FW_MF_MOMENT_BANK = [
   },
   {
     title: '"Clutch Moment" Phút 90+ Định Đoạt Trận Đấu',
+    category: 'PLAYMAKING',
+    weights: { FW: 16, MF: 24 },
     desc: 'Phút 90, trận đấu bước vào thời gian bù giờ nghẹt thở! Bạn nhận bóng trước vòng cấm!',
     ballPitchPercent: 82,
     choices: [
@@ -1275,20 +1289,73 @@ const FW_MF_MOMENT_BANK = [
 ];
 
 /**
+ * Chọn ngẫu nhiên có trọng số không lặp lại (Weighted Random Sampling without replacement)
+ * @param {Array} items Danh sách moment
+ * @param {'FW'|'MF'} role Vai trò vị trí ('FW' hoặc 'MF')
+ * @param {number} count Số lượng moment cần chọn (mặc định 3)
+ * @returns {Array} Danh sách moment đã chọn
+ */
+export function selectWeightedMoments(items, role = 'FW', count = 3) {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  const available = [...items];
+  const selected = [];
+  const targetCount = Math.min(count, available.length);
+
+  for (let step = 0; step < targetCount; step++) {
+    const totalWeight = available.reduce((sum, item) => {
+      const w = item.weights?.[role] ?? 10;
+      return sum + (w > 0 ? w : 1);
+    }, 0);
+
+    if (totalWeight <= 0) {
+      selected.push(available.splice(0, 1)[0]);
+      continue;
+    }
+
+    let roll = Math.random() * totalWeight;
+    let chosenIndex = 0;
+    for (let i = 0; i < available.length; i++) {
+      const w = available[i].weights?.[role] ?? 10;
+      const weightVal = w > 0 ? w : 1;
+      if (roll < weightVal) {
+        chosenIndex = i;
+        break;
+      }
+      roll -= weightVal;
+    }
+    selected.push(available.splice(chosenIndex, 1)[0]);
+  }
+
+  return selected;
+}
+
+/**
  * Rewritten generateMomentsForMatch — pulls from large random pool per position.
- * Selects 3 moments with randomized minutes per period.
+ * Selects 3 moments with randomized minutes per period with weighted selection for FW/MF.
  * @param {object} player
  * @param {object} matchInfo
  * @returns {Array}
  */
-function generateMomentsForMatch(player, matchInfo) {
-  const isGK = player.position === 'GK';
-  const isDF = player.position === 'DF';
-  const pool = isGK ? GK_MOMENT_BANK : (isDF ? DF_MOMENT_BANK : FW_MF_MOMENT_BANK);
+export function generateMomentsForMatch(player, matchInfo) {
+  const pPos = String(player?.position || player?.pos || player?.positionGroup || 'FW').toUpperCase();
+  const pGroup = String(player?.positionGroup || '').toUpperCase();
 
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  const count = Math.min(3, shuffled.length);
-  const selected = shuffled.slice(0, count);
+  const isGK = pPos === 'GK' || pGroup === 'GK';
+  const isDF = ['DF', 'CB', 'LB', 'RB', 'LWB', 'RWB'].includes(pPos) || pGroup === 'DF';
+  const isMF = ['MF', 'CM', 'CAM', 'CDM', 'LM', 'RM'].includes(pPos) || pGroup === 'MF';
+  const isFW = !isGK && !isDF && !isMF; // Default to FW (FW, ST, CF, LW, RW...)
+
+  let selected = [];
+  if (isGK) {
+    const shuffled = [...GK_MOMENT_BANK].sort(() => Math.random() - 0.5);
+    selected = shuffled.slice(0, Math.min(3, shuffled.length));
+  } else if (isDF) {
+    const shuffled = [...DF_MOMENT_BANK].sort(() => Math.random() - 0.5);
+    selected = shuffled.slice(0, Math.min(3, shuffled.length));
+  } else {
+    const role = isMF ? 'MF' : 'FW';
+    selected = selectWeightedMoments(FW_MF_MOMENT_BANK, role, 3);
+  }
 
   const minuteBands = [
     () => Math.floor(Math.random() * 35) + 10,
@@ -1300,6 +1367,12 @@ function generateMomentsForMatch(player, matchInfo) {
     ...m,
     minute: minuteBands[Math.min(i, minuteBands.length - 1)](),
   }));
+}
+
+if (typeof window !== 'undefined') {
+  window.generateMomentsForMatch = generateMomentsForMatch;
+  window.selectWeightedMoments = selectWeightedMoments;
+  window.FW_MF_MOMENT_BANK = FW_MF_MOMENT_BANK;
 }
 
 /* =========================================================================
