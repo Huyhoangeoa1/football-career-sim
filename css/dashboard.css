@@ -4423,5 +4423,237 @@
   }
 }
 
+/* =========================================================================
+   SPECIAL TRAITS: PREFERRED FOOT, WEAK FOOT & SKILL MOVES (EA FC STYLE)
+   ========================================================================= */
+.player-special-traits-container {
+  width: 100%;
+}
+
+.traits-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .traits-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trait-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.trait-card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.trait-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.trait-icon {
+  font-size: 1.1rem;
+}
+
+.trait-title {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trait-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.foot-badge {
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.foot-right {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.foot-left {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.foot-badge:hover {
+  transform: scale(1.05);
+}
+
+.stars-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stars-display .star {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.stars-display .star.gold {
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+}
+
+.stars-display .star.empty {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.stars-display .star.trickster-star {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.9), 0 0 18px rgba(236, 72, 153, 0.7);
+  animation: tricksterPulse 2s ease-in-out infinite;
+}
+
+.stars-display .star.trickster-empty {
+  color: rgba(192, 132, 252, 0.25);
+}
+
+.stars-counter {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.trait-subtext {
+  font-size: 0.69rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+/* 5⭐ Weak Foot Golden Glow */
+.wf-five-stars {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.25);
+  animation: goldenShimmer 3s ease-in-out infinite alternate;
+}
+
+@keyframes goldenShimmer {
+  0% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.45); }
+}
+
+.golden-glow-text {
+  color: #fde047 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+/* 6⭐ Skill Moves Trickster+ Neon Purple Glow */
+.sm-six-stars-trickster {
+  border-color: rgba(192, 132, 252, 0.6);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(88, 28, 135, 0.25));
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.35);
+  animation: tricksterBorderAura 3s ease-in-out infinite;
+}
+
+@keyframes tricksterPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #c084fc); }
+  50% { transform: scale(1.18); filter: drop-shadow(0 0 10px #ec4899); }
+}
+
+@keyframes tricksterBorderAura {
+  0%, 100% { border-color: rgba(192, 132, 252, 0.6); box-shadow: 0 0 15px rgba(192, 132, 252, 0.3); }
+  50% { border-color: rgba(236, 72, 153, 0.8); box-shadow: 0 0 25px rgba(236, 72, 153, 0.5); }
+}
+
+.neon-purple-glow-text {
+  color: #e9d5ff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.8), 0 0 20px rgba(236, 72, 153, 0.6);
+}
+
+.btn-trait-train {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-trait-train:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.trait-maxed-badge {
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.trait-maxed-badge.trickster-badge {
+  background: rgba(192, 132, 252, 0.2);
+  color: #f5d0fe;
+  border: 1px solid rgba(192, 132, 252, 0.5);
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.4);
+}
+
+.trait-upgrade-hint {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #c084fc;
+  padding: 3px 4px;
+  border-radius: 4px;
+  background: rgba(147, 51, 234, 0.15);
+  border: 1px dashed rgba(192, 132, 252, 0.4);
+  text-align: center;
+  margin-top: 4px;
+}
+
 
 

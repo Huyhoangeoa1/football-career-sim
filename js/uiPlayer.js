@@ -597,3 +597,177 @@ function _showFcsToast(msg) {
   setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
 }
 
+/* =========================================================================
+   HỆ THỐNG HIỂN THỊ CHÂN THUẬN, CHÂN NGHỊCH (WEAK FOOT) & KỸ THUẬT (SKILL MOVES)
+   ========================================================================= */
+
+function _renderWfStars(count) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += i <= count 
+      ? '<span class="star filled gold">★</span>' 
+      : '<span class="star empty">☆</span>';
+  }
+  return html;
+}
+
+function _renderSmStars(count) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += i <= count 
+      ? '<span class="star filled gold">★</span>' 
+      : '<span class="star empty">☆</span>';
+  }
+  // Ngôi sao thứ 6 đặc biệt (Trickster+ Master)
+  if (count >= 6) {
+    html += '<span class="star filled trickster-star" title="Trickster+ 6th Star">★</span>';
+  } else {
+    html += '<span class="star empty trickster-empty" title="Khóa 6⭐ Trickster+ (Cần Thuê Chuyên Gia Freestyle)">☆</span>';
+  }
+  return html;
+}
+
+export function renderPlayerTraits(player = getPlayer(), onUpdate = null) {
+  const container = document.getElementById('playerSpecialTraitsContainer');
+  if (!container) return;
+
+  const prefFoot = player.preferredFoot || 'Right';
+  const wf = Math.min(5, Math.max(1, Number(player.weakFoot) || 3));
+  const sm = Math.min(6, Math.max(1, Number(player.skillMoves) || 3));
+  const wfProg = Number(player.weakFootTrainProgress) || 0;
+  const smProg = Number(player.skillMovesTrainProgress) || 0;
+
+  const isWfMax = wf >= 5;
+  const isSmMax = sm >= 6;
+
+  container.innerHTML = `
+    <div class="traits-grid-3">
+      <!-- 1. Chân Thuận (Preferred Foot) -->
+      <div class="trait-card trait-card-foot" id="cardPrefFoot" title="Nhấp để chuyển đổi Chân Thuận (Phải / Trái)">
+        <div class="trait-header">
+          <span class="trait-icon">🦶</span>
+          <span class="trait-title">Chân Thuận</span>
+        </div>
+        <div class="trait-value foot-val">
+          <span class="foot-badge ${prefFoot === 'Left' ? 'foot-left' : 'foot-right'}" id="btnToggleFoot">
+            ${prefFoot === 'Left' ? 'Trái (Left) 👟' : 'Phải (Right) 👟'}
+          </span>
+        </div>
+        <div class="trait-subtext">${prefFoot === 'Left' ? 'Kèo trái khéo léo & xoáy hiểm' : 'Kèo phải uy lực & chính xác'}</div>
+      </div>
+
+      <!-- 2. Chân Nghịch (Weak Foot) -->
+      <div class="trait-card trait-card-wf ${isWfMax ? 'wf-five-stars' : ''}" title="Chân không thuận (Độ hiểm & lực sút khi góc sút bất lợi)">
+        <div class="trait-header">
+          <span class="trait-icon">👟</span>
+          <span class="trait-title">Chân Nghịch</span>
+        </div>
+        <div class="trait-value stars-val">
+          <span class="stars-display">${_renderWfStars(wf)}</span>
+          <span class="stars-counter">(${wf}/5)</span>
+        </div>
+        <div class="trait-subtext ${isWfMax ? 'golden-glow-text' : ''}">
+          ${isWfMax ? '✨ Hai chân như một (100% Lực)' : (wf === 4 ? 'Rất thuần thục (-5% phạt)' : (wf === 3 ? 'Khá đồng đều (-10% phạt)' : 'Hạn chế (-25% lực/chính xác)'))}
+        </div>
+        ${!isWfMax ? `
+          <button class="btn-trait-train" id="btnTrainWeakFoot" title="Luyện tập sút chân nghịch (-10% Thể lực)">
+            🎯 Luyện Sút (${wfProg}/5)
+          </button>
+        ` : `
+          <div class="trait-maxed-badge">MAX 5⭐ TOÀN DIỆN</div>
+        `}
+      </div>
+
+      <!-- 3. Kỹ Thuật (Skill Moves) -->
+      <div class="trait-card trait-card-sm ${sm === 6 ? 'sm-six-stars-trickster' : (sm === 5 ? 'sm-five-stars' : '')}" title="Kỹ thuật cá nhân (Tỷ lệ qua người 1v1 & Chiêu thức độc quyền)">
+        <div class="trait-header">
+          <span class="trait-icon">🪄</span>
+          <span class="trait-title">Kỹ Thuật</span>
+        </div>
+        <div class="trait-value stars-val">
+          <span class="stars-display">${_renderSmStars(sm)}</span>
+          <span class="stars-counter">(${sm}/6)</span>
+        </div>
+        <div class="trait-subtext ${sm === 6 ? 'neon-purple-glow-text' : ''}">
+          ${sm === 6 ? '🔮 6⭐ Trickster+ Tối Thượng' : (sm === 5 ? '5⭐ Ảo thuật gia (+15% rê)' : (sm === 4 ? '4⭐ Điêu luyện (+10% rê)' : 'Kỹ thuật cơ bản'))}
+        </div>
+        ${sm < 5 ? `
+          <button class="btn-trait-train" id="btnTrainSkillMoves" title="Luyện tập đảo chân qua người (-10% Thể lực)">
+            🪄 Luyện Kỹ Thuật (${smProg}/6)
+          </button>
+        ` : (sm === 5 ? `
+          <div class="trait-upgrade-hint" title="Cần Thuê Chuyên Gia Kỹ Thuật Freestyle tại Cửa Hàng để đạt cảnh giới 6⭐">
+            ⭐ Thuê Chuyên Gia (Cửa Hàng)
+          </div>
+        ` : `
+          <div class="trait-maxed-badge trickster-badge">TRICKSTER+ 6⭐ MASTER</div>
+        `)}
+      </div>
+    </div>
+  `;
+
+  // Gán sự kiện đổi chân thuận
+  const btnFoot = container.querySelector('#btnToggleFoot');
+  if (btnFoot) {
+    btnFoot.onclick = () => {
+      player.preferredFoot = player.preferredFoot === 'Left' ? 'Right' : 'Left';
+      _showFcsToast(`🦶 Đã chuyển chân thuận thành: ${player.preferredFoot === 'Left' ? 'Kèo Trái (Left)' : 'Kèo Phải (Right)'}!`);
+      renderPlayerTraits(player, onUpdate);
+      if (typeof onUpdate === 'function') onUpdate(player);
+    };
+  }
+
+  // Gán sự kiện tập chân nghịch
+  const btnTrainWf = container.querySelector('#btnTrainWeakFoot');
+  if (btnTrainWf) {
+    btnTrainWf.onclick = () => {
+      const curStam = player.stam !== undefined ? player.stam : (player.stamina || 80);
+      if (curStam < 10) {
+        _showFcsToast('⚠️ Bạn quá kiệt sức! Cần ít nhất 10% thể lực để luyện chân nghịch.');
+        return;
+      }
+      player.stam = Math.max(5, curStam - 10);
+      player.stamina = player.stam;
+      player.weakFootTrainProgress = (player.weakFootTrainProgress || 0) + 1;
+
+      if (player.weakFootTrainProgress >= 5) {
+        player.weakFoot = Math.min(5, (Number(player.weakFoot) || 3) + 1);
+        player.weakFootTrainProgress = 0;
+        _showFcsToast(`👟 ĐỈNH CAO! Kỹ năng Chân Nghịch đã thăng cấp lên ${player.weakFoot}⭐!`);
+      } else {
+        _showFcsToast(`🎯 Hoàn thành buổi tập sút chân không thuận (${player.weakFootTrainProgress}/5) (-10 Stam)`);
+      }
+
+      renderPlayerTraits(player, onUpdate);
+      if (typeof onUpdate === 'function') onUpdate(player);
+    };
+  }
+
+  // Gán sự kiện tập kỹ thuật Skill Moves
+  const btnTrainSm = container.querySelector('#btnTrainSkillMoves');
+  if (btnTrainSm) {
+    btnTrainSm.onclick = () => {
+      const curStam = player.stam !== undefined ? player.stam : (player.stamina || 80);
+      if (curStam < 10) {
+        _showFcsToast('⚠️ Bạn quá kiệt sức! Cần ít nhất 10% thể lực để tập luyện kỹ thuật.');
+        return;
+      }
+      player.stam = Math.max(5, curStam - 10);
+      player.stamina = player.stam;
+      player.skillMovesTrainProgress = (player.skillMovesTrainProgress || 0) + 1;
+
+      if (player.skillMovesTrainProgress >= 6) {
+        player.skillMoves = Math.min(5, (Number(player.skillMoves) || 3) + 1);
+        player.skillMovesTrainProgress = 0;
+        _showFcsToast(`🪄 TUYỆT KỸ! Kỹ năng Kỹ Thuật (Skill Moves) thăng cấp lên ${player.skillMoves}⭐!`);
+      } else {
+        _showFcsToast(`🪄 Hoàn thành bài tập rê bóng và qua người (${player.skillMovesTrainProgress}/6) (-10 Stam)`);
+      }
+
+      renderPlayerTraits(player, onUpdate);
+      if (typeof onUpdate === 'function') onUpdate(player);
+    };
+  }
+}
+
+

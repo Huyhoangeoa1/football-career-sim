@@ -428,6 +428,9 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
         player.money -= subObj.costYearly;
       } else {
         player.subscriptions.splice(i, 1);
+        if (subId === "sub_freestyle_coach" && player.skillMoves > 5) {
+          player.skillMoves = 5;
+        }
         subsReportText += ` [Hết tiền duy trì ${subObj.name}]`;
       }
     }

@@ -746,15 +746,17 @@ export function launchInteractiveMatchCenter(matchInfo, player, onFinishCallback
 
     m.choices.forEach(choice => {
       const winRate = Math.round(choice.successChance(player) * 100);
+      const choiceText = typeof choice.text === 'function' ? choice.text(player) : choice.text;
+      const statHintText = typeof choice.statHint === 'function' ? choice.statHint(player) : choice.statHint;
       const card = document.createElement('div');
       card.className = 'mc-choice-card';
       card.innerHTML = `
         <div class="mc-choice-top">
-          <span class="mc-choice-label">${choice.text}</span>
+          <span class="mc-choice-label">${choiceText}</span>
           <span class="mc-choice-rate">⚡ Tỷ lệ: ${winRate}%</span>
         </div>
         <div class="mc-choice-req">
-          ${choice.statHint}
+          ${statHintText}
         </div>
       `;
 
@@ -766,9 +768,14 @@ export function launchInteractiveMatchCenter(matchInfo, player, onFinishCallback
           choice.onSuccess(player, matchResultStats);
           if (isPlayerHome) homeScore++; else awayScore++;
           updateScoreboard();
-          addMatchEvent(m.minute, "⚽", choice.successText);
+          const sText = typeof choice.successText === 'function' ? choice.successText(player) : choice.successText;
+          addMatchEvent(m.minute, "⚽", sText);
         } else {
           choice.onFailure(player, matchResultStats);
+          const isDribble = choice.isDribble || /rê|lừa|Elastico|Rabona/i.test(choiceText);
+          if (isDribble && player.skillMoves >= 6) {
+            addMatchEvent(m.minute, "🪄", `Đối thủ cố phạm lỗi truy cản nhưng đôi chân Trickster+ thoăn thoắt né đòn an toàn!`);
+          }
           // Opponent might score on counter
           if (Math.random() < 0.4) {
             if (isPlayerHome) awayScore++; else homeScore++;
@@ -1145,10 +1152,15 @@ export const FW_MF_MOMENT_BANK = [
     desc: 'Trận đấu đang ở thế giằng co, bạn cầm bóng trước rìa vòng cấm địa!',
     ballPitchPercent: 80,
     choices: [
-      { text: 'Đi bóng lắt léo vượt qua 2 hậu vệ xộc thẳng vào cấm địa',
-        statHint: 'Yêu cầu: Rê Bóng + Thể Lực',
-        successChance: (p) => Math.min(0.87, (p.attr4 * 0.007) + (p.stam * 0.002)),
-        successText: 'VŨ ĐIỆU SÂN CỎ! Nhảy múa qua 2 hậu vệ rồi dứt điểm tung nóc lưới!',
+      { text: (p) => (p && p.skillMoves >= 6) ? '🪄 [Trickster+] Đảo chân Elastico kép xâu kim qua 2 hậu vệ xộc thẳng vào cấm địa' : 'Đi bóng lắt léo vượt qua 2 hậu vệ xộc thẳng vào cấm địa',
+        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ qua người & giảm 50% chấn thương' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ)` : 'Yêu cầu: Rê Bóng + Thể Lực'),
+        isDribble: true,
+        successChance: (p) => {
+          const sm = p?.skillMoves || 3;
+          const smBonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
+          return Math.min(0.95, (p.attr4 * 0.007) + (p.stam * 0.002) + smBonus);
+        },
+        successText: (p) => (p && p.skillMoves >= 6) ? 'ẢO THUẬT GIA TRICKSTER+! Cú Elastico kép xâu kim 2 hậu vệ không thể tin nổi trước khi nã đại bác tung nóc lưới!' : 'VŨ ĐIỆU SÂN CỎ! Nhảy múa qua 2 hậu vệ rồi dứt điểm tung nóc lưới!',
         failureText: 'Hậu vệ đối phương phạm lỗi kín lấy bóng.',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.form = Math.min(99, p.form + 6); },
         onFailure: (p) => { p.morale = Math.max(40, p.morale - 5); } },
@@ -1241,13 +1253,115 @@ export const FW_MF_MOMENT_BANK = [
     desc: 'Phá bẫy việt vị thành công! Bạn thoát xuống đối mặt trực tiếp với thủ môn!',
     ballPitchPercent: 88,
     choices: [
-      { text: 'Đảo chân lừa qua thủ môn rồi đưa bóng vào lưới trống',
-        statHint: 'Yêu cầu: Rê Bóng + Tinh Thần',
-        successChance: (p) => Math.min(0.87, (p.attr4 * 0.006) + (p.morale * 0.003)),
-        successText: 'SÁT THỦ LẠNH LÙNG! Đảo bóng qua thủ môn rồi dễ dàng đệm vào lưới trống!',
+      { text: (p) => (p && p.skillMoves >= 6) ? '🪄 [Trickster+] Hất bóng cầu vồng Rabona đỉnh cao qua đầu thủ môn' : 'Đảo chân lừa qua thủ môn rồi đưa bóng vào lưới trống',
+        statHint: (p) => (p && p.skillMoves >= 6) ? 'Trickster+ (6⭐): +25% Tỷ lệ thành công & Giảm 50% rủi ro' : ((p && p.skillMoves >= 4) ? `Kỹ thuật ${p.skillMoves}⭐ (+${p.skillMoves === 5 ? 15 : 10}% tỷ lệ)` : 'Yêu cầu: Rê Bóng + Tinh Thần'),
+        isDribble: true,
+        successChance: (p) => {
+          const sm = p?.skillMoves || 3;
+          const smBonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
+          return Math.min(0.95, (p.attr4 * 0.006) + (p.morale * 0.003) + smBonus);
+        },
+        successText: (p) => (p && p.skillMoves >= 6) ? 'SIÊU PHẨM RABONA CẦU VỒNG! Cú vắt chân hất bóng cầu vồng không tưởng qua đầu thủ môn găm thẳng vào lưới trống!' : 'SÁT THỦ LẠNH LÙNG! Đảo bóng qua thủ môn rồi dễ dàng đệm vào lưới trống!',
         failureText: 'Thủ môn đối phương băng ra cực nhanh cản phá!',
         onSuccess: (p, r) => { r.goals += 1; p.totalCareerGoals = (p.totalCareerGoals || 0) + 1; p.form = Math.min(99, p.form + 8); p.fame = Math.min(99, p.fame + 5); },
         onFailure: (p) => { p.morale = Math.max(35, p.morale - 8); } }
+    ]
+  },
+  {
+    id: 'MOMENT_TRICKSTER_MASTER',
+    title: '🪄 Tuyệt Kỹ Trickster+: Siêu Phẩm Elastico Kép',
+    category: 'GOAL',
+    minSkillMoves: 6,
+    weights: { FW: 35, MF: 28 },
+    desc: 'Bị hai hậu vệ to cao đối phương kèm chặt sát đường biên ngang! Đã đến lúc kích hoạt bản năng ảo thuật gia Trickster+!',
+    ballPitchPercent: 88,
+    choices: [
+      {
+        text: '🪄 Đảo chân Elastico kép xâu kim qua 2 hậu vệ xộc thẳng vào cấm địa',
+        statHint: 'Đặc quyền Trickster+ (6⭐): +25% Tỷ lệ đột phá & -50% rủi ro phạm lỗi',
+        isDribble: true,
+        successChance: (p) => {
+          const sm = p?.skillMoves || 3;
+          const bonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
+          return Math.min(0.95, (p.attr4 * 0.007) + (p.stam * 0.002) + bonus);
+        },
+        successText: 'ẢO THUẬT GIA SÂN CỎ! Cú đảo chân Elastico kép biến 2 hậu vệ thành tượng gỗ, xâu kim điệu nghệ rồi dứt điểm sấm sét tung nóc lưới!',
+        failureText: 'Động tác siêu khó khiến hàng thủ đối phương một phen hoảng sợ thót tim.',
+        onSuccess: (p, r) => {
+          r.goals += 1;
+          p.totalCareerGoals = (p.totalCareerGoals || 0) + 1;
+          p.form = 99;
+          p.fame = Math.min(99, p.fame + 8);
+          recordChronicleMilestone(p, 'CLUTCH_MOMENT', { desc: 'Biểu diễn siêu phẩm Elastico kép xâu kim qua 2 hậu vệ ghi bàn kinh điển!' });
+        },
+        onFailure: (p) => { p.morale = Math.max(45, p.morale - 3); }
+      },
+      {
+        text: '🪄 Hất bóng cầu vồng Rabona đỉnh cao qua đầu thủ môn',
+        statHint: 'Kỹ thuật Rabona thượng thừa (6⭐): +25% Thành công',
+        isDribble: true,
+        successChance: (p) => {
+          const sm = p?.skillMoves || 3;
+          const bonus = sm >= 6 ? 0.25 : (sm === 5 ? 0.15 : (sm === 4 ? 0.10 : 0));
+          return Math.min(0.94, (p.attr4 * 0.006) + (p.attr1 * 0.003) + bonus);
+        },
+        successText: 'SIÊU PHẨM CẦU VỒNG RABONA! Cú hất chân chéo Rabona vẽ nên đường cong không tưởng qua đầu thủ môn găm vào lưới!',
+        failureText: 'Pha vắt chân hơi sâu đưa bóng đi chệch khung thành trong gang tấc.',
+        onSuccess: (p, r) => {
+          r.goals += 1;
+          p.totalCareerGoals = (p.totalCareerGoals || 0) + 1;
+          p.fame = Math.min(99, p.fame + 10);
+          p.morale = 100;
+          recordChronicleMilestone(p, 'CLUTCH_MOMENT', { desc: 'Lập siêu phẩm Rabona cầu vồng để đời làm chấn động thế giới!' });
+        },
+        onFailure: (p) => { p.morale = Math.max(45, p.morale - 3); }
+      }
+    ]
+  },
+  {
+    id: 'MOMENT_WEAK_FOOT_FINISH',
+    title: '👟 Dứt Điểm Chân Nghịch Trong Vòng Cấm',
+    category: 'GOAL',
+    weights: { FW: 25, MF: 18 },
+    desc: 'Đường căng ngang dội ngược sang phía chân không thuận! Góc sút hẹp đòi hỏi bản lĩnh và độ thuần thục của chân nghịch.',
+    ballPitchPercent: 85,
+    choices: [
+      {
+        text: 'Vung chân sút ngay bằng chân không thuận vào góc hiểm',
+        statHint: (p) => (p && p.weakFoot >= 5) ? '✨ Hai Chân Như Một (5⭐): 100% Uy lực, 0% điểm phạt' : `👟 Chân Nghịch (${p?.weakFoot || 3}⭐): ${(p?.weakFoot || 3) < 3 ? '-25%' : ((p?.weakFoot || 3) === 3 ? '-10%' : '-5%')} tỷ lệ`,
+        isWeakFoot: true,
+        successChance: (p) => {
+          const wf = p?.weakFoot || 3;
+          let penalty = 0;
+          if (wf >= 5) penalty = 0;
+          else if (wf === 4) penalty = -0.05;
+          else if (wf === 3) penalty = -0.10;
+          else penalty = -0.25;
+          return Math.max(0.35, Math.min(0.92, (p.attr1 * 0.007) + (p.form * 0.003) + penalty));
+        },
+        successText: 'HAI CHÂN NHƯ MỘT! Cú ra chân bằng chân nghịch sấm sét găm thẳng vào góc chữ A khiến thủ môn bó tay!',
+        failureText: 'Cú sút bằng chân không thuận đi thiếu chính xác ra ngoài đường biên.',
+        onSuccess: (p, r) => {
+          r.goals += 1;
+          p.totalCareerGoals = (p.totalCareerGoals || 0) + 1;
+          p.fame = Math.min(99, p.fame + 5);
+          p.form = Math.min(99, p.form + 5);
+        },
+        onFailure: (p) => { p.morale = Math.max(40, p.morale - 4); }
+      },
+      {
+        text: 'Khống chế gạt bóng về chân thuận rồi mới cứa lòng',
+        statHint: 'Yêu cầu: Kiểm Soát Bóng + Bình Tĩnh',
+        successChance: (p) => Math.min(0.86, (p.attr4 * 0.006) + (p.attr1 * 0.003)),
+        successText: 'BÌNH TĨNH ĐẲNG CẤP! Pha sửa bóng về chân thuận hoàn hảo mở ra góc sút cứa lòng không thể cản phá!',
+        failureText: 'Hậu vệ đối phương kịp thời ập vào can thiệp trước khi kịp vung chân thuận.',
+        onSuccess: (p, r) => {
+          r.goals += 1;
+          p.totalCareerGoals = (p.totalCareerGoals || 0) + 1;
+          p.fame = Math.min(99, p.fame + 4);
+        },
+        onFailure: (p) => { p.morale = Math.max(40, p.morale - 4); }
+      }
     ]
   },
   {
@@ -1354,7 +1468,15 @@ export function generateMomentsForMatch(player, matchInfo) {
     selected = shuffled.slice(0, Math.min(3, shuffled.length));
   } else {
     const role = isMF ? 'MF' : 'FW';
-    selected = selectWeightedMoments(FW_MF_MOMENT_BANK, role, 3);
+    const sm = Number(player?.skillMoves) || 3;
+    const eligiblePool = FW_MF_MOMENT_BANK.filter(m => !m.minSkillMoves || sm >= m.minSkillMoves);
+    selected = selectWeightedMoments(eligiblePool, role, 3);
+    if (sm >= 6 && !selected.some(s => s.id === 'MOMENT_TRICKSTER_MASTER')) {
+      const tricksterM = eligiblePool.find(m => m.id === 'MOMENT_TRICKSTER_MASTER');
+      if (tricksterM && Math.random() < 0.70) {
+        selected[0] = tricksterM;
+      }
+    }
   }
 
   const minuteBands = [

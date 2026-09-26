@@ -1425,6 +1425,16 @@ export const LIFESTYLE_CATALOG = {
       badgeText: "Dịch Vụ Hàng Năm",
       desc: "Quản lý hình ảnh, truyền thông số và tối đa hóa thương hiệu cá nhân trên toàn cầu.",
       buffSummary: "Tự động +5 Danh tiếng (Fame) mỗi năm, tăng 30% giá trị hợp đồng tài trợ"
+    },
+    {
+      id: "sub_freestyle_coach",
+      name: "Thuê Chuyên Gia Kỹ Thuật Freestyle & Đôi Chân Ma Thuật",
+      category: "SUBSCRIPTION",
+      icon: "🪄",
+      costYearly: 2500000,
+      badgeText: "Kỹ Thuật Tối Thượng",
+      desc: "HLV kỹ thuật đường phố & bậc thầy Samba hướng dẫn các tuyệt kỹ ảo thuật gia và kỹ năng Trickster+ đỉnh cao.",
+      buffSummary: "Nâng cấp và duy trì Kỹ Thuật lên 6 Sao (⭐ Trickster+ Master), +25% đột phá 1v1, giảm 50% chấn thương khi rê bóng"
     }
   ],
 
@@ -3257,6 +3267,78 @@ export const MATCH_EVENT_TEMPLATES = [
         successType: 'ASSIST',
         failType: 'PASS_FAIL',
         successText: 'PHỐI HỢP CHIẾN THUẬT BẬC THẦY! Pha đập nhả 1-2 xé toang hàng thủ lùi sâu, mở toang góc sút thuận lợi ghi bàn!'
+      }
+    ]
+  },
+  {
+    id: 'DRIBBLING_TAKEOVER',
+    category: 'ATTACKING',
+    name: 'Đột Phá 1v1 Nách Trung Lộ (Take-on)',
+    eligiblePositions: ['FW', 'MF', 'ST', 'WINGER', 'CAM', 'CM', 'WING', 'LW', 'RW', 'CF', 'LM', 'RM'],
+    title: '🪄 Đột Phá 1v1 Nách Trung Lộ (Take-on)',
+    desc: 'Bạn nhận bóng ở rìa vòng cấm địa đối phương trong tư thế 1 đối 1 với hậu vệ cuối cùng!',
+    choices: [
+      {
+        id: 'DRIBBLE_SKILL_MOVE',
+        text: '🪄 Vung chân biểu diễn kỹ thuật vượt qua hậu vệ',
+        statHint: 'Dựa vào Kỹ Thuật (Skill Moves) & Rê bóng',
+        statKey: 'attr4',
+        xG: 0.65,
+        baseSuccessChance: 0.70,
+        successType: 'GOAL',
+        failType: 'TACKLE',
+        cardRisk: 0.08,
+        fameBonus: 25,
+        ratingBonus: 0.5,
+        successText: 'QUA NGƯỜI ĐIỆU NGHỆ! Kỹ thuật cá nhân siêu việt giúp bạn vượt qua sự truy cản của hậu vệ rồi sút bóng tung nóc lưới đối phương!'
+      },
+      {
+        id: 'DRIBBLE_PASS_COMBINE',
+        text: '🎯 Đập nhả một chạm với đồng đội rồi thoát xuống',
+        statHint: 'Dựa vào Chuyền bóng & Nhãn quan',
+        statKey: 'attr2',
+        xG: 0.50,
+        baseSuccessChance: 0.80,
+        successType: 'ASSIST',
+        failType: 'PASS_FAIL',
+        successText: 'PHA PHỐI HỢP MẪU MỰC! Đập nhả xé toang khối phòng ngự đối phương tạo cơ hội mười mươi ghi bàn!'
+      }
+    ]
+  },
+  {
+    id: 'WEAK_FOOT_FINISH',
+    category: 'ATTACKING',
+    name: 'Dứt Điểm Góc Bất Lợi Chân Nghịch (Weak Foot)',
+    eligiblePositions: ['FW', 'MF', 'ST', 'WINGER', 'CAM', 'CM', 'WING', 'LW', 'RW', 'CF', 'LM', 'RM'],
+    title: '👟 Cơ Hội Dứt Điểm Góc Bất Lợi (Chân Nghịch)',
+    desc: 'Bóng bật ra sang phía chân không thuận! Góc sút hẹp đòi hỏi khả năng xử lý bằng chân nghịch hoặc kỹ thuật tinh quái.',
+    choices: [
+      {
+        id: 'WEAK_FOOT_SHOT',
+        text: '👟 Vung chân dứt điểm ngay bằng chân không thuận',
+        statHint: 'Tác động trực tiếp bởi Chỉ số Chân Nghịch (Weak Foot)',
+        statKey: 'attr1',
+        isWeakFoot: true,
+        xG: 0.60,
+        baseSuccessChance: 0.75,
+        successType: 'GOAL',
+        failType: 'MISS',
+        fameBonus: 20,
+        ratingBonus: 0.4,
+        successText: 'CÚ RA CHÂN BẤT NGỜ! Cú sút bằng chân không thuận cực kỳ hiểm hóc găm thẳng vào góc lưới đối phương!'
+      },
+      {
+        id: 'WEAK_FOOT_OUTSIDE_CURL',
+        text: '🪄 Vẩy má ngoài chân thuận (Trivela) vào góc xa',
+        statHint: 'Yêu cầu Kỹ thuật xử lý má ngoài điệu nghệ',
+        statKey: 'attr4',
+        xG: 0.55,
+        baseSuccessChance: 0.72,
+        successType: 'GOAL',
+        failType: 'MISS',
+        fameBonus: 30,
+        ratingBonus: 0.5,
+        successText: 'SIÊU PHẨM TRIVELA! Một cú vẩy má ngoài ảo diệu đưa bóng cuộn vào góc xa trong sự ngỡ ngàng của thủ môn!'
       }
     ]
   },

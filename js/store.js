@@ -56,6 +56,10 @@ export function toggleSubscription(player, subId, enable) {
     player.money -= sub.costYearly;
     player.subscriptions.push(sub.id);
     if (sub.id === "sub_psychologist") player.morale = Math.max(85, player.morale + 15);
+    if (sub.id === "sub_freestyle_coach") {
+      player.skillMoves = 6;
+      player.skillMovesTrainProgress = 0;
+    }
 
     return {
       success: true,
@@ -66,6 +70,9 @@ export function toggleSubscription(player, subId, enable) {
     };
   } else {
     player.subscriptions = player.subscriptions.filter(id => id !== sub.id);
+    if (sub.id === "sub_freestyle_coach") {
+      if (player.skillMoves > 5) player.skillMoves = 5;
+    }
     return {
       success: true,
       sub,

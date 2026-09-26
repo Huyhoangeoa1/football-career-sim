@@ -8,7 +8,7 @@ import {
 } from './engine.js';
 import { ensurePlayerStats, getFameTier } from './playerEngine.js';
 import { formatCurrency, formatMoney, formatSalary, getEuroBadgeText } from './uiCore.js';
-import { renderActiveBuffsBar, renderRivalWidget, renderTrophyShowcase, renderFcsUltimateCard } from './uiPlayer.js';
+import { renderActiveBuffsBar, renderRivalWidget, renderTrophyShowcase, renderFcsUltimateCard, renderPlayerTraits } from './uiPlayer.js';
 import { renderLiveIndividualTracker, renderSignatureTraits } from './uiStats.js';
 import { renderRecordsTab } from './uiRecords.js';
 import { renderCompetitionTierWidget } from './uiCompetition.js';
@@ -305,6 +305,7 @@ export function updateUI(player) {
   renderLiveIndividualTracker(player);
   renderTrophyShowcase(player);
   renderFcsUltimateCard(player);
+  renderPlayerTraits(player, updateUI);
   renderRecordsTab(player);
   renderSignatureTraits(player);
   renderCompetitionTierWidget(player);

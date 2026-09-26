@@ -317,6 +317,34 @@ export function createDeepMatchSimulation(player, matchData = {}) {
 }
 
 /**
+ * Tính toán hệ số phạt/bù của Chân Nghịch (Weak Foot)
+ * @param {number} weakFootRating (1 đến 5 sao)
+ * @param {boolean} isWeakFootSituation Có phải tình huống sút/chuyền bằng chân nghịch không
+ * @returns {number} Hệ số điều chỉnh (+0.0, -0.05, -0.10, -0.25)
+ */
+export function getWeakFootModifier(weakFootRating = 3, isWeakFootSituation = false) {
+  if (!isWeakFootSituation) return 0;
+  const wf = Math.max(1, Math.min(5, Number(weakFootRating) || 3));
+  if (wf >= 5) return 0;       // Hai chân như một: 100% uy lực, xóa bỏ hoàn toàn điểm phạt
+  if (wf === 4) return -0.05;  // Giảm nhẹ 5%
+  if (wf === 3) return -0.10;  // Giảm nhẹ 10%
+  return -0.25;                // Dưới 3 sao: Giảm 25% tỷ lệ thành công
+}
+
+/**
+ * Tính toán điểm cộng tỷ lệ thành công của Kỹ Thuật (Skill Moves)
+ * @param {number} skillMovesRating (1 đến 6 sao)
+ * @returns {number} Tỷ lệ cộng thêm (+0.0, +0.10, +0.15, +0.25)
+ */
+export function getSkillMovesBonus(skillMovesRating = 3) {
+  const sm = Math.max(1, Math.min(6, Number(skillMovesRating) || 3));
+  if (sm >= 6) return 0.25;    // 6⭐ Trickster+ Tối Thượng: +25%
+  if (sm === 5) return 0.15;    // 5⭐: +15%
+  if (sm === 4) return 0.10;    // 4⭐: +10%
+  return 0.0;                  // 1⭐ - 3⭐: Lựa chọn cơ bản
+}
+
+/**
  * Sinh tình huống lựa chọn bước ngoặt (Decision Moment) cho người chơi
  * Bốc ngẫu nhiên từ danh sách sự kiện hợp lệ theo vị trí thi đấu (MATCH_EVENT_TEMPLATES)
  */
@@ -348,15 +376,69 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
         const baseChance = c.baseSuccessChance || 0.75;
         const statBonus = ((statVal - 50) / 100) * 0.35;
         const videoBonus = (player.preMatchPrep === 'VIDEO_ANALYSIS' || player._tacticalPrepBonus) ? 0.05 : 0;
-        const calcChance = Math.max(0.40, Math.min(0.95, (baseChance + statBonus) * penaltyAccuracyMult + tierSuccessBonus + videoBonus));
+
+        // --- HỆ THỐNG CHÂN NGHỊCH (WEAK FOOT) & KỸ THUẬT (SKILL MOVES) ---
+        const smRating = Math.max(1, Math.min(6, Number(player.skillMoves) || 3));
+        const wfRating = Math.max(1, Math.min(5, Number(player.weakFoot) || 3));
+
+        const isDribbleAction = Boolean(
+          c.id?.includes('DRIBBLE') || 
+          c.id?.includes('PANENKA') || 
+          c.id?.includes('SKILL') || 
+          c.statKey === 'attr4' || 
+          /rê|lừa|đột phá|qua người|trivela/i.test(c.text || '') || 
+          /take-on|dribbl/i.test(tpl.name || '')
+        );
+
+        const isWeakFootAction = Boolean(
+          c.isWeakFoot || 
+          c.id?.includes('WEAK_FOOT') || 
+          /chân nghịch|chân không thuận|góc bất lợi/i.test(c.text || '') || 
+          /chân nghịch/i.test(tpl.name || '')
+        );
+
+        let skillBonus = 0;
+        let wfPenalty = 0;
+        let choiceText = typeof c.text === 'function' ? c.text(player) : c.text;
+
+        if (isDribbleAction) {
+          skillBonus = getSkillMovesBonus(smRating);
+          if (smRating >= 6) {
+            if (/biểu diễn|vượt qua|lừa qua/i.test(choiceText)) {
+              choiceText = '🪄 [Trickster+ 6⭐] Đảo chân Elastico kép xâu kim qua 2 hậu vệ xộc thẳng vào cấm địa';
+            }
+          }
+        }
+
+        if (isWeakFootAction) {
+          wfPenalty = getWeakFootModifier(wfRating, true);
+        }
+
+        const calcChance = Math.max(0.30, Math.min(0.96, (baseChance + statBonus + skillBonus + wfPenalty) * penaltyAccuracyMult + tierSuccessBonus + videoBonus));
 
         let statHintText = typeof c.statHint === 'function' ? c.statHint(player) : c.statHint;
         if (!statHintText) {
           statHintText = `Dựa vào ${c.statName || 'Chỉ số'} (${statVal})`;
         }
+        if (isDribbleAction) {
+          if (smRating >= 6) {
+            statHintText += ` | 🪄 Trickster+ (+25% tỷ lệ, -50% rủi ro phạm lỗi)`;
+          } else if (smRating >= 4) {
+            statHintText += ` | ⭐ Kỹ Thuật ${smRating}⭐ (+${Math.round(skillBonus * 100)}% tỷ lệ)`;
+          }
+        }
+        if (isWeakFootAction) {
+          if (wfRating >= 5) {
+            statHintText += ` | ✨ Hai Chân Như Một (5⭐, 100% Uy Lực)`;
+          } else {
+            statHintText += ` | 👟 Chân Nghịch (${wfRating}⭐, ${Math.round(wfPenalty * 100)}% tỷ lệ)`;
+          }
+        }
+
+        const cardRiskVal = (c.cardRisk || 0) * (isDribbleAction && smRating >= 6 ? 0.5 : 1.0);
 
         return {
-          text: c.text,
+          text: choiceText,
           statHint: statHintText,
           xG: c.xG || 0.50,
           successChance: calcChance,
@@ -364,7 +446,7 @@ export function createDecisionMoment(player, minute, isFatigued, zone = 'ATTACKI
           failType: c.failType || 'MISS',
           fameBonus: c.fameBonus || 0,
           ratingBonus: c.ratingBonus || 0,
-          cardRisk: c.cardRisk || 0,
+          cardRisk: cardRiskVal,
           successText: c.successText || null
         };
       })

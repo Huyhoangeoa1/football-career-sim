@@ -108,6 +108,23 @@ export function _migrate(data) {
   if (data.customAvatarUrl === undefined) {
     data.customAvatarUrl = '';
   }
+  if (!data.preferredFoot) {
+    data.preferredFoot = 'Right';
+  }
+  if (!data.weakFoot) {
+    const p = String(data.position || 'ST').toUpperCase();
+    data.weakFoot = p === 'GK' ? 2 : (['CB', 'DF', 'LB', 'RB'].includes(p) ? 3 : 4);
+  }
+  if (!data.skillMoves) {
+    const p = String(data.position || 'ST').toUpperCase();
+    data.skillMoves = p === 'GK' ? 1 : (['CB', 'DF', 'LB', 'RB'].includes(p) ? 2 : 3);
+  }
+  if (data.weakFootTrainProgress === undefined) {
+    data.weakFootTrainProgress = 0;
+  }
+  if (data.skillMovesTrainProgress === undefined) {
+    data.skillMovesTrainProgress = 0;
+  }
 
   // Ensure attributes are floats
   if (data.attr1 !== undefined) data.attr1 = parseFloat(Number(data.attr1).toFixed(2));
