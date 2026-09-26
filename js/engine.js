@@ -120,6 +120,7 @@ export {
   initBallonDorRankings,
   advanceBallonDorRound,
   updateBallonDorRankings,
+  calculateBallonDorScore,
   getGoldenShoeRankings,
   getBallonDorPowerRankings,
   syncIndividualTrackersDOM,
@@ -873,6 +874,14 @@ export function simulateMatchdayRound(player, isQuickSim = false, interactiveRes
     player.careerStats.cleanSheets = player.totalCareerCleanSheets;
     player.careerStats.saves = player.totalCareerSaves;
     player.careerStats.tackles = player.totalCareerTackles;
+  }
+
+  // Cập nhật điểm đánh giá trung bình mùa giải (Average Match Rating)
+  player.seasonRatingsSum = (player.seasonRatingsSum || 0) + matchRating;
+  player.seasonRatingsCount = (player.seasonRatingsCount || 0) + 1;
+  player.avgRating = Number((player.seasonRatingsSum / player.seasonRatingsCount).toFixed(2));
+  if (player.currentSeasonStats) {
+    player.currentSeasonStats.avgRating = player.avgRating;
   }
 
   // 6. CẬP NHẬT DANH HIỆU CÁ NHÂN: CHIẾC GIÀY VÀNG & TOP 5 QUẢ BÓNG VÀNG

@@ -1,4 +1,4 @@
-/* =========================================================================
+﻿/* =========================================================================
    UI MATCH ARENA — INTERACTIVE MATCH CENTER & DEEP TICK-BASED MATCH ENGINE
    Extracted from ui.js
    ========================================================================= */
@@ -9,8 +9,8 @@ import { getFameTier, calculateOVR } from './playerEngine.js';
 import { addLog } from './uiLogs.js';
 
 // Hằng số thời gian hiển thị banner ăn mừng cố định (2.4s thực tế - chuẩn yêu cầu 2.0s - 2.5s)
-const CELEBRATION_BANNER_DURATION = 2400;
-const CELEBRATION_FADE_BUFFER = 400;
+const CELEBRATION_BANNER_DURATION = 1000;
+const CELEBRATION_FADE_BUFFER = 200;
 
 // Biến toàn cục theo dõi tỉ số & timer bàn thắng / kiến tạo
 let _prevHomeScore = 0;

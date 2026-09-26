@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    UI PLAYER — PLAYER CARD, BUFFS, RIVALRY, TROPHY SHOWCASE & CARD MODALS
    Extracted from ui.js
    ========================================================================= */
@@ -99,10 +99,13 @@ export function renderTrophyShowcase(player) {
 
   trophyKeys.forEach(tName => {
     const isBallonDor = tName.includes("Quả Bóng Vàng");
-    const isAward = tName.includes("Chiếc Giày Vàng") || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
+    const isScorer = tName.includes("Vua Phá Lưới") || tName.includes("Chiếc Giày Vàng");
+    const isPlaymaker = tName.includes("Vua Kiến Tạo");
+    const isAward = isBallonDor || isScorer || isPlaymaker || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
+    const icon = isBallonDor ? '👑' : (isScorer ? '👟' : (isPlaymaker ? '🎯' : (isAward ? '🌟' : '🏆')));
     const badge = document.createElement('div');
-    badge.className = `trophy-badge ${isBallonDor || isAward ? 'award-badge' : ''}`;
-    badge.innerHTML = `${isBallonDor ? '👑' : (isAward ? '🌟' : '🏆')} ${tName} <strong style="color:#fff;">x${player.trophiesTally[tName]}</strong>`;
+    badge.className = `trophy-badge ${isAward ? 'award-badge' : ''}`;
+    badge.innerHTML = `${icon} ${tName} <strong style="color:#fff;">x${player.trophiesTally[tName]}</strong>`;
     showcase.appendChild(badge);
   });
 }

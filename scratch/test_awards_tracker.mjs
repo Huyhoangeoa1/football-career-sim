@@ -7,6 +7,7 @@ import {
   updateBallonDorRankings,
   getGoldenShoeRankings,
   getBallonDorPowerRankings,
+  calculateBallonDorScore,
   isSameClub
 } from '../js/engine.js';
 import { YOUTH_ACADEMIES } from '../js/data.js';
@@ -90,8 +91,15 @@ const myClubWins = (player.leagueTable || []).find(t => isSameClub(t, player.clu
 console.log("Player club league wins:", myClubWins);
 
 // Check expected bdorScore formula:
-// const bdorScore = Number(((avgRating * 5) + (totalG * 0.8) + (totalA * 0.5) + (teamWins * 0.5)).toFixed(1));
-const expectedBdor = Number(((8.8 * 5) + (3 * 0.8) + (1 * 0.5) + (myClubWins * 0.5)).toFixed(1));
+const expectedBdor = calculateBallonDorScore({
+  line: 'FW',
+  avgRating: 8.8,
+  goals: 3,
+  assists: 1,
+  teamWins: myClubWins,
+  trophies: [],
+  fame: player.fame || 0
+});
 console.log("Calculated player.bdorScore:", player.bdorScore, "| Expected:", expectedBdor);
 if (player.bdorScore !== expectedBdor) {
   throw new Error(`bdorScore mismatch: got ${player.bdorScore}, expected ${expectedBdor}`);

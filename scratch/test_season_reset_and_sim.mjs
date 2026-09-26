@@ -13,6 +13,7 @@ import {
   updateBallonDorRankings,
   getGoldenShoeRankings,
   getBallonDorPowerRankings,
+  calculateBallonDorScore,
   isSameClub
 } from '../js/engine.js';
 import { YOUTH_ACADEMIES } from '../js/data.js';
@@ -127,7 +128,15 @@ console.log("✅ Golden Shoe dynamically updated with 0-1 goals for European sta
 // Verify Ballon d'Or:
 // Formula: score = ((player.avgRating || 7.0) * 5) + (goals * 0.8) + (assists * 0.5) + (teamWins * 0.5)
 const teamWins = (player.leagueTable || []).find(t => isSameClub(t, player.club) || isSameClub(t, player.academy))?.won || 0;
-const expectedScore = Number(((8.5 * 5) + (2 * 0.8) + (1 * 0.5) + (teamWins * 0.5)).toFixed(1));
+const expectedScore = calculateBallonDorScore({
+  line: 'FW',
+  avgRating: 8.5,
+  goals: 2,
+  assists: 1,
+  teamWins: teamWins,
+  trophies: [],
+  fame: player.fame || 0
+});
 const pBdorAfter = player.ballonDorRankings.find(r => r.isPlayer);
 console.log(`Ballon d'Or player score: ${pBdorAfter.score}, expected: ${expectedScore} (Wins: ${teamWins})`);
 if (pBdorAfter.score !== expectedScore) {

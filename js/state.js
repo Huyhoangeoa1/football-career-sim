@@ -234,6 +234,11 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
       domesticCup: null,    // Sơ đồ phân nhánh Cúp Quốc Gia (Tứ kết -> Bán kết -> Chung kết)
       continentalCup: null  // Sơ đồ phân nhánh Cúp Châu Âu (UCL / UEL)
     },
+    cupStats: {
+      domesticCup: { goals: 0, assists: 0, matches: 0 },
+      continentalCup: { goals: 0, assists: 0, matches: 0 },
+      summerTournament: { goals: 0, assists: 0, matches: 0 }
+    },
     continentalGroupTable: [], // Bảng xếp hạng 4 đội vòng bảng Cúp C1/C2
     activeLeagueTableFilter: 'LEAGUE', // 'LEAGUE' | 'CONTINENTAL'
 

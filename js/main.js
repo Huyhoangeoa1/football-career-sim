@@ -1395,85 +1395,101 @@ export function simulateSeason(actionTitle = "Thi Đấu Mùa Giải Mới", act
     (result.seasonTrophiesWonList || []).length,
     isBallonDorWon,
     () => {
-      // BƯỚC 1: TĂNG TUỔI VÀ NĂM MÙA GIẢI SAU KHI XÁC NHẬN TỔNG KẾT
-      player.age = (player.age || 16) + 1;
-      player.year = (player.year || 2026) + 1;
-      player.seasonCount = (player.seasonCount || 1) + 1;
-      player.seasonsPlayed = (player.seasonsPlayed || 0) + 1;
+      const proceedSeasonRollover = () => {
+        // BƯỚC 1: TĂNG TUỔI VÀ NĂM MÙA GIẢI SAU KHI XÁC NHẬN TỔNG KẾT
+        player.age = (player.age || 16) + 1;
+        player.year = (player.year || 2026) + 1;
+        player.seasonCount = (player.seasonCount || 1) + 1;
+        player.seasonsPlayed = (player.seasonsPlayed || 0) + 1;
 
-      if (player.age > 30) {
-        let decayFactor = player.subscriptions.includes("sub_cryo") ? 0.75 : 1.5;
-        const decay = Math.floor((player.age - 29) * decayFactor);
-        player.stam = Math.max(15, player.stam - decay);
-        if (player.age > 33) {
-          const attrDecay = player.subscriptions.includes("sub_cryo") ? 1 : 2;
-          player.attr1 = Math.max(25, player.attr1 - attrDecay);
-          player.attr2 = Math.max(25, player.attr2 - attrDecay);
+        if (player.age > 30) {
+          let decayFactor = player.subscriptions.includes("sub_cryo") ? 0.75 : 1.5;
+          const decay = Math.floor((player.age - 29) * decayFactor);
+          player.stam = Math.max(15, player.stam - decay);
+          if (player.age > 33) {
+            const attrDecay = player.subscriptions.includes("sub_cryo") ? 1 : 2;
+            player.attr1 = Math.max(25, player.attr1 - attrDecay);
+            player.attr2 = Math.max(25, player.attr2 - attrDecay);
+          }
         }
-      }
 
-      // Callback SAU KHI người chơi bấm nút "BƯỚC SANG MÙA GIẢI MỚI"
-      if (isBallonDorWon) {
-        addLog(player, "QUẢ BÓNG VÀNG THẾ GIỚI", `🥇 Khoảnh khắc lịch sử! Bạn chính thức nhận danh hiệu QUẢ BÓNG VÀNG (Ballon d'Or) thứ ${player.ballonDorWins} danh giá nhất thế giới!`, "trophy-win");
-      }
+        // Callback SAU KHI người chơi bấm nút "BƯỚC SANG MÙA GIẢI MỚI"
+        if (isBallonDorWon) {
+          addLog(player, "QUẢ BÓNG VÀNG THẾ GIỚI", `🥇 Khoảnh khắc lịch sử! Bạn chính thức nhận danh hiệu QUẢ BÓNG VÀNG (Ballon d'Or) thứ ${player.ballonDorWins} danh giá nhất thế giới!`, "trophy-win");
+        }
 
-      const goldenShoeList = getGoldenShoeRankings(player);
-      if (goldenShoeList.length > 0 && goldenShoeList[0].isPlayer) {
-        addLog(player, "CHIẾC GIÀY VÀNG CHÂU ÂU", `👟 VUA PHÁ LƯỚI CHÂU ÂU! Bạn chính thức nhận danh hiệu CHIẾC GIÀY VÀNG CHÂU ÂU (European Golden Shoe) với ${goldenShoeList[0].goals} bàn thắng!`, "trophy-win");
-      }
+        const goldenShoeList = getGoldenShoeRankings(player);
+        if (goldenShoeList.length > 0 && goldenShoeList[0].isPlayer) {
+          addLog(player, "CHIẾC GIÀY VÀNG CHÂU ÂU", `👟 VUA PHÁ LƯỚI CHÂU ÂU! Bạn chính thức nhận danh hiệu CHIẾC GIÀY VÀNG CHÂU ÂU (European Golden Shoe) với ${goldenShoeList[0].goals} bàn thắng!`, "trophy-win");
+        }
 
-      addFullSeasonStructuredLog(
-        player,
-        actionTitle,
-        result.finalActionReport,
-        result.seasonReportRows,
-        result.seasonTotalSummary,
-        result.isTrophyWin
-      );
+        addFullSeasonStructuredLog(
+          player,
+          actionTitle,
+          result.finalActionReport,
+          result.seasonReportRows,
+          result.seasonTotalSummary,
+          result.isTrophyWin
+        );
 
-      checkAndAwardRecords(player, (rec) => {
+        checkAndAwardRecords(player, (rec) => {
+          addLog(
+            player,
+            "KỶ LỤC LỊCH SỬ BỊ PHÁ VỠ!",
+            `🚨 LỊCH SỬ SANG TRANG! Bạn chính thức phá vỡ kỷ lục "${rec.title}" với thành tích vô tiền khoáng hậu (Vượt qua cột mốc của ${rec.holder})!`,
+            "trophy-win"
+          );
+        });
+
+        // Reset toàn bộ accumulator & bảng điểm mùa giải cũ về 0 cho mùa giải mới
+        player.seasonAccumulator = { matches: 0, goals: 0, assists: 0, cs: 0, saves: 0, tackles: 0 };
+        player.currentSeasonGoals = 0;
+        player.seasonRatingsSum = 0;
+        player.seasonRatingsCount = 0;
+        player.avgRating = 0;
+        if (player.currentSeasonStats) {
+          player.currentSeasonStats.avgRating = 0;
+        }
+        if (player.rival) player.rival.seasonGoals = 0;
+
+        // Bắt buộc đặt lại currentPhase = 1 cho mùa giải mới
+        player.currentSeasonPhase = 1;
+        gameState.currentPhase = 1;
+        initSeasonScheduleAndTable(player);
+
+        // KIỂM TRA ĐIỀU KIỆN GIẢI NGHỆ NGAY SAU KHI BẤM CHUYỂN MÙA
+        const isRetired = checkRetirementConditions();
+        if (isRetired) {
+          return; // Đã giải nghệ -> Dừng lại và hiển thị Đại Sảnh Danh Vọng
+        }
+
         addLog(
           player,
-          "KỶ LỤC LỊCH SỬ BỊ PHÁ VỠ!",
-          `🚨 LỊCH SỬ SANG TRANG! Bạn chính thức phá vỡ kỷ lục "${rec.title}" với thành tích vô tiền khoáng hậu (Vượt qua cột mốc của ${rec.holder})!`,
-          "trophy-win"
+          "BAT DAU MUA GIAI MOI",
+          `Bat dau mua giai moi (Nam ${player.year} - ${player.age} Tuoi)! Toan doi buoc vao Chang 1 chuan bi cho cuoc dua vo dich tai ${player.currentClub?.name || 'CLB'}!`,
+          "normal"
         );
-      });
 
-      // Reset toàn bộ accumulator & bảng điểm mùa giải cũ về 0 cho mùa giải mới
-      player.seasonAccumulator = { matches: 0, goals: 0, assists: 0, cs: 0, saves: 0, tackles: 0 };
-      player.currentSeasonGoals = 0;
-      if (player.rival) player.rival.seasonGoals = 0;
-
-      // Bắt buộc đặt lại currentPhase = 1 cho mùa giải mới
-      player.currentSeasonPhase = 1;
-      gameState.currentPhase = 1;
-      initSeasonScheduleAndTable(player);
-
-      // KIỂM TRA ĐIỀU KIỆN GIẢI NGHỆ NGAY SAU KHI BẤM CHUYỂN MÙA
-      const isRetired = checkRetirementConditions();
-      if (isRetired) {
-        return; // Đã giải nghệ -> Dừng lại và hiển thị Đại Sảnh Danh Vọng
-      }
-
-      addLog(
-        player,
-        "BAT DAU MUA GIAI MOI",
-        `Bat dau mua giai moi (Nam ${player.year} - ${player.age} Tuoi)! Toan doi buoc vao Chang 1 chuan bi cho cuoc dua vo dich tai ${player.currentClub?.name || 'CLB'}!`,
-        "normal"
-      );
-
-      autoSave(player);  // AUTO-SAVE at start of new season
-      updateUI(player);
-
-      rollRandomEvent(player, (logTitle, logBody, logType) => {
-        addLog(player, logTitle, logBody, logType);
-        autoSave(player);
+        autoSave(player);  // AUTO-SAVE at start of new season
         updateUI(player);
-        checkRetirementConditions();
-      }, () => {
-        checkRetirementConditions();
-      });
+
+        rollRandomEvent(player, (logTitle, logBody, logType) => {
+          addLog(player, logTitle, logBody, logType);
+          autoSave(player);
+          updateUI(player);
+          checkRetirementConditions();
+        }, () => {
+          checkRetirementConditions();
+        });
+      };
+
+      if (isBallonDorWon) {
+        showBallonDorWinnerModal(player, () => {
+          proceedSeasonRollover();
+        });
+      } else {
+        proceedSeasonRollover();
+      }
     }
   );
 }

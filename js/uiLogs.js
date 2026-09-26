@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    UI LOGS — CAREER LOGS & SEASON SUMMARY MODAL
    Extracted from ui.js
    ========================================================================= */
@@ -233,10 +233,90 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
     rowsContainer.appendChild(teamTrophiesCard);
 
     // 2. Phân loại giải thưởng cá nhân (Individual Awards)
-    const topScorerRow = reportRows.find(r => r.title && (r.title.includes("Vua Phá Lưới") || (r.text && r.text.includes("VUA PHÁ LƯỚI"))));
-    const topPlaymakerRow = reportRows.find(r => r.title && (r.title.includes("Vua Kiến Tạo") || (r.text && r.text.includes("VUA KIẾN TẠO"))));
-    const wonTopScorer = Boolean(topScorerRow || trophiesList.includes("Vua Phá Lưới Giải Trẻ (Top Scorer)") || trophiesList.some(t => typeof t === 'string' && t.includes("Vua Phá Lưới")));
-    const wonTopPlaymaker = Boolean(topPlaymakerRow || trophiesList.includes("Vua Kiến Tạo Giải Trẻ (Top Playmaker)") || trophiesList.some(t => typeof t === 'string' && t.includes("Vua Kiến Tạo")));
+    const allWonThisYear = [
+      ...(Array.isArray(trophiesList) ? trophiesList : []),
+      ...(Array.isArray(player.seasonTrophiesWonThisYear) ? player.seasonTrophiesWonThisYear : [])
+    ];
+    const uniqueWonTrophies = Array.from(new Set(allWonThisYear));
+
+    // Lọc danh sách Vua Phá Lưới & Vua Kiến Tạo đã đạt được mùa này
+    const wonTopScorerTitles = uniqueWonTrophies.filter(t => typeof t === 'string' && (t.includes("Vua Phá Lưới") || t.includes("Top Scorer")));
+    const wonTopPlaymakerTitles = uniqueWonTrophies.filter(t => typeof t === 'string' && (t.includes("Vua Kiến Tạo") || t.includes("Top Playmaker")));
+    const wonMajorAnnualAwards = uniqueWonTrophies.filter(t => typeof t === 'string' && (
+      t.includes("Quả Bóng Vàng") || 
+      t.includes("Chiếc Giày Vàng") || 
+      t.includes("FIFA The Best") || 
+      t.includes("Găng Tay Vàng")
+    ));
+
+    let awardsItemsHtml = '';
+
+    if (wonTopScorerTitles.length > 0) {
+      wonTopScorerTitles.forEach(title => {
+        awardsItemsHtml += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+            <span>👟 <strong>${title}:</strong></span>
+            <span style="font-weight: 800; color: #fbbf24; background: rgba(245,158,11,0.2); padding: 2px 8px; border-radius: 4px;">
+              🥇 CHIẾN THẮNG
+            </span>
+          </div>
+        `;
+      });
+    } else {
+      awardsItemsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+          <span>👟 <strong>Hiệu suất Ghi Bàn Mùa Giải:</strong></span>
+          <span style="font-weight: 700; color: #e2e8f0;">
+            ${seasonGoals || player.currentSeasonStats?.goals || 0} bàn thắng
+          </span>
+        </div>
+      `;
+    }
+
+    if (wonTopPlaymakerTitles.length > 0) {
+      wonTopPlaymakerTitles.forEach(title => {
+        awardsItemsHtml += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+            <span>🎯 <strong>${title}:</strong></span>
+            <span style="font-weight: 800; color: #c084fc; background: rgba(168,85,247,0.2); padding: 2px 8px; border-radius: 4px;">
+              🎯 CHIẾN THẮNG
+            </span>
+          </div>
+        `;
+      });
+    } else {
+      awardsItemsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+          <span>🎯 <strong>Hiệu suất Kiến Tạo Mùa Giải:</strong></span>
+          <span style="font-weight: 700; color: #e2e8f0;">
+            ${seasonAssists || player.currentSeasonStats?.assists || 0} kiến tạo
+          </span>
+        </div>
+      `;
+    }
+
+    if (wonMajorAnnualAwards.length > 0) {
+      wonMajorAnnualAwards.forEach(title => {
+        const isBdor = title.includes("Quả Bóng Vàng");
+        awardsItemsHtml += `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
+            <span>${isBdor ? '👑' : '🌟'} <strong>${title}:</strong></span>
+            <span style="font-weight: 900; color: #fbbf24; background: rgba(245,158,11,0.25); padding: 2px 8px; border-radius: 4px;">
+              🏆 ĐOẠT GIẢI
+            </span>
+          </div>
+        `;
+      });
+    } else if (isBallonDorWon) {
+      awardsItemsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+          <span>👑 <strong>Quả Bóng Vàng Thế Giới (Ballon d'Or):</strong></span>
+          <span style="font-weight: 900; color: #fbbf24; background: rgba(245,158,11,0.25); padding: 2px 8px; border-radius: 4px;">
+            🥇 CHIẾN THẮNG
+          </span>
+        </div>
+      `;
+    }
 
     const personalAwardsCard = document.createElement('div');
     personalAwardsCard.style.cssText = "background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(236, 72, 153, 0.08)); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 8px; padding: 12px 14px; text-align: left;";
@@ -245,25 +325,7 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
         <span>👟</span> <span>CÁC GIẢI THƯỞNG CÁ NHÂN DANH GIÁ</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08);">
-          <span>👟 <strong>Vua Phá Lưới (Top Scorer):</strong></span>
-          <span style="font-weight: 800; ${wonTopScorer ? 'color: #fbbf24; background: rgba(245,158,11,0.2); padding: 2px 8px; border-radius: 4px;' : 'color: #e2e8f0;'}">
-            ${wonTopScorer ? `🥇 VUA PHÁ LƯỚI (${seasonGoals || player.currentSeasonStats?.goals || 0} bàn)` : `${seasonGoals || 0} bàn thắng`}
-          </span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; ${isBallonDorWon ? 'border-bottom: 1px dashed rgba(255,255,255,0.08);' : ''}">
-          <span>🎯 <strong>Vua Kiến Tạo (Top Playmaker):</strong></span>
-          <span style="font-weight: 800; ${wonTopPlaymaker ? 'color: #c084fc; background: rgba(168,85,247,0.2); padding: 2px 8px; border-radius: 4px;' : 'color: #e2e8f0;'}">
-            ${wonTopPlaymaker ? `🎯 VUA KIẾN TẠO (${seasonAssists || player.currentSeasonStats?.assists || 0} kiến tạo)` : `${seasonAssists || 0} kiến tạo`}
-          </span>
-        </div>
-        ${isBallonDorWon ? `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-          <span>👑 <strong>Quả Bóng Vàng Thế Giới (Ballon d'Or):</strong></span>
-          <span style="font-weight: 900; color: #fbbf24; background: rgba(245,158,11,0.25); padding: 2px 8px; border-radius: 4px;">
-            🥇 CHIẾN THẮNG
-          </span>
-        </div>` : ''}
+        ${awardsItemsHtml}
       </div>
     `;
     rowsContainer.appendChild(personalAwardsCard);

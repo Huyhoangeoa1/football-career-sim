@@ -1,4 +1,4 @@
-﻿/* =========================================================================
+/* =========================================================================
    UI RECORDS — RECORDS TAB, RETIREMENT & HALL OF FAME
    Extracted from ui.js
    ========================================================================= */
@@ -206,10 +206,13 @@ export function renderRetirementScreen(player) {
     } else {
       trophyKeys.forEach(tName => {
         const isBallonDor = tName.includes("Quả Bóng Vàng");
-        const isAward = tName.includes("Chiếc Giày Vàng") || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
+        const isScorer = tName.includes("Vua Phá Lưới") || tName.includes("Chiếc Giày Vàng");
+        const isPlaymaker = tName.includes("Vua Kiến Tạo");
+        const isAward = isBallonDor || isScorer || isPlaymaker || tName.includes("FIFA The Best") || tName.includes("Găng Tay Vàng");
+        const icon = isBallonDor ? '👑' : (isScorer ? '👟' : (isPlaymaker ? '🎯' : (isAward ? '🌟' : '🏆')));
         const item = document.createElement('div');
-        item.className = `trophy-breakdown-item ${isBallonDor || isAward ? 'award-item' : ''}`;
-        item.innerHTML = `<span>${isBallonDor ? '👑' : (isAward ? '🌟' : '🏆')} ${tName}</span> <span class="t-count" style="${isBallonDor || isAward ? 'color:var(--accent-gold); font-size:1.05rem;' : ''}">x${player.trophiesTally[tName]}</span>`;
+        item.className = `trophy-breakdown-item ${isAward ? 'award-item' : ''}`;
+        item.innerHTML = `<span>${icon} ${tName}</span> <span class="t-count" style="${isAward ? 'color:var(--accent-gold); font-size:1.05rem;' : ''}">x${player.trophiesTally[tName]}</span>`;
         breakdownEl.appendChild(item);
       });
     }

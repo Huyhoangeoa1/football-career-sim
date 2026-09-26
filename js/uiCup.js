@@ -12,7 +12,8 @@ import {
   isSameClub,
   isClubMatch,
   simulateAIFixture,
-  getPlayerActiveClub
+  getPlayerActiveClub,
+  evaluateAndAwardCupAwards
 } from './cupEngine.js';
 
 import { getCurrentSaveSlot } from './storage.js';
@@ -590,6 +591,10 @@ export function renderTournamentBrackets(player, activeType = null) {
       `<div class="bracket-match-node" style="grid-column: 3; grid-row: 5 / span 4; width: 190px; min-width: 190px; box-sizing: border-box;">${renderMatchCard(sf[1], 'Bán Kết 2', activeClub)}</div>`
     ].join('\n');
 
+    if (currentBracket.champion && !currentBracket.awards) {
+      evaluateAndAwardCupAwards(player, currentTab === 'UCL' ? 'continental' : 'domestic', { bracket: currentBracket });
+    }
+
     const finalHtml = `
       <div class="bracket-match-node final-match" style="grid-column: 4; grid-row: 1 / span 8; width: 190px; min-width: 190px; position: relative; box-sizing: border-box;">
         ${renderMatchCard(finalMatch, 'Chung Kết', activeClub)}
@@ -599,6 +604,22 @@ export function renderTournamentBrackets(player, activeType = null) {
             <div style="font-size:0.95rem; font-weight:900; color:#fff; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
               ${currentBracket.champion.icon ? currentBracket.champion.icon : '👑'} ${currentBracket.champion.name}
             </div>
+            ${currentBracket.awards ? `
+              <div style="margin-top:6px; padding:6px; background:rgba(15,23,42,0.92); border:1px solid rgba(245,158,11,0.3); border-radius:6px; font-size:0.72rem; text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                  <span style="color:#fbbf24; font-weight:800;">👟 Phá Lưới:</span>
+                  <span style="${currentBracket.awards.topScorer.isPlayer ? 'color:#fbbf24; font-weight:900; background:rgba(245,158,11,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.topScorer.winnerName} (${currentBracket.awards.topScorer.stat || currentBracket.awards.topScorer.goals || 0}⚽)
+                  </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#c084fc; font-weight:800;">🎯 Kiến Tạo:</span>
+                  <span style="${currentBracket.awards.topPlaymaker.isPlayer ? 'color:#c084fc; font-weight:900; background:rgba(168,85,247,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.topPlaymaker.winnerName} (${currentBracket.awards.topPlaymaker.stat || currentBracket.awards.topPlaymaker.assists || 0}🎯)
+                  </span>
+                </div>
+              </div>
+            ` : ''}
           </div>
         ` : ''}
       </div>
@@ -749,6 +770,10 @@ export function renderTournamentBrackets(player, activeType = null) {
       `<div class="bracket-match-node" style="grid-column: 2; grid-row: 3 / span 2; width: 190px; min-width: 190px; box-sizing: border-box;">${renderMatchCard(uylSf[1], 'Bán Kết 2', activeClub)}</div>`
     ].join('\n');
 
+    if (isGroupFinished && currentBracket.champion && !currentBracket.awards) {
+      evaluateAndAwardCupAwards(player, 'continental', { bracket: currentBracket });
+    }
+
     const uylFinalHtml = `
       <div class="bracket-match-node final-match" style="grid-column: 3; grid-row: 1 / span 4; width: 190px; min-width: 190px; position: relative; box-sizing: border-box;">
         ${renderMatchCard(uylFinalMatch, 'Chung Kết', activeClub)}
@@ -758,6 +783,22 @@ export function renderTournamentBrackets(player, activeType = null) {
             <div style="font-size:0.95rem; font-weight:900; color:#fff; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
               ${currentBracket.champion.icon ? currentBracket.champion.icon : '👑'} ${currentBracket.champion.name}
             </div>
+            ${currentBracket.awards ? `
+              <div style="margin-top:6px; padding:6px; background:rgba(15,23,42,0.92); border:1px solid rgba(56,189,248,0.35); border-radius:6px; font-size:0.72rem; text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                  <span style="color:#fbbf24; font-weight:800;">👟 Phá Lưới:</span>
+                  <span style="${currentBracket.awards.topScorer.isPlayer ? 'color:#fbbf24; font-weight:900; background:rgba(245,158,11,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.topScorer.winnerName} (${currentBracket.awards.topScorer.stat || currentBracket.awards.topScorer.goals || 0}⚽)
+                  </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#c084fc; font-weight:800;">🎯 Kiến Tạo:</span>
+                  <span style="${currentBracket.awards.topPlaymaker.isPlayer ? 'color:#c084fc; font-weight:900; background:rgba(168,85,247,0.25); padding:1px 4px; border-radius:3px;' : 'color:#e2e8f0; font-weight:700;'}">
+                    ${currentBracket.awards.topPlaymaker.winnerName} (${currentBracket.awards.topPlaymaker.stat || currentBracket.awards.topPlaymaker.assists || 0}🎯)
+                  </span>
+                </div>
+              </div>
+            ` : ''}
           </div>
         ` : ''}
       </div>
