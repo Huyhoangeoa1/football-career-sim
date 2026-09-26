@@ -115,23 +115,22 @@ console.log(`✓ Face stat SHO is ${player.stats.sho}, OVR calculated: ${ovr}.`)
 // -------------------------------------------------------------
 console.log('\n--- 4. Testing Preferred Foot, Weak Foot & Skill Moves Constraints ---');
 const pDefault = createInitialPlayer('ST Player', 'VN', 'ST');
-assert(pDefault.preferredFootStars >= 3 && pDefault.preferredFootStars <= 5, 'preferredFootStars in range 3-5');
+assert(pDefault.preferredFootStars >= 1 && pDefault.preferredFootStars <= 5, 'preferredFootStars in range 1-5');
 assert(pDefault.weakFoot <= pDefault.preferredFootStars, 'Initial weakFoot <= preferredFootStars');
-assert.strictEqual(pDefault.preferredFootSide, 'Right', 'preferredFootSide is Right');
-assert.strictEqual(pDefault.preferredFoot, 'Right', 'preferredFoot alias is Right');
+assert(['Right', 'Left'].includes(pDefault.preferredFootSide), 'preferredFootSide is Right or Left');
+assert.strictEqual(pDefault.preferredFoot, pDefault.preferredFootSide, 'preferredFoot alias is equal to preferredFootSide');
+assert(pDefault.skillMoves >= 1 && pDefault.skillMoves <= 4, 'skillMoves in range 1-4');
 
 const pGK = createInitialPlayer('GK Player', 'VN', 'GK');
-assert.strictEqual(pGK.preferredFootStars, 3, 'GK preferredFootStars is 3');
-assert.strictEqual(pGK.weakFoot, 2, 'GK weakFoot is 2');
-assert.strictEqual(pGK.skillMoves, 1, 'GK skillMoves is 1');
+assert(pGK.preferredFootStars >= 1 && pGK.preferredFootStars <= 5, 'GK preferredFootStars in range 1-5');
 assert(pGK.weakFoot <= pGK.preferredFootStars, 'GK weakFoot <= preferredFootStars');
+assert(pGK.skillMoves <= 4, 'GK skillMoves <= 4');
 
 const pDF = createInitialPlayer('DF Player', 'VN', 'CB');
-assert.strictEqual(pDF.preferredFootStars, 3, 'CB preferredFootStars is 3');
-assert.strictEqual(pDF.weakFoot, 3, 'CB weakFoot is 3');
-assert.strictEqual(pDF.skillMoves, 2, 'CB skillMoves is 2');
+assert(pDF.preferredFootStars >= 1 && pDF.preferredFootStars <= 5, 'CB preferredFootStars in range 1-5');
 assert(pDF.weakFoot <= pDF.preferredFootStars, 'CB weakFoot <= preferredFootStars');
-console.log('✓ Initial traits and position-based defaults validated.');
+assert(pDF.skillMoves <= 4, 'CB skillMoves <= 4');
+console.log('✓ Initial traits and randomized bounds validated.');
 
 // -------------------------------------------------------------
 // 5. Kiểm tra Nâng Cấp Kỹ Năng Bằng SP (upgradeSpecialTraitWithSP)

@@ -7,19 +7,21 @@ import { LIFESTYLE_CATALOG } from '../js/data.js';
 
 console.log('--- TEST 1: Default Player & Attributes ---');
 const pDefault = createInitialPlayer('Nguyen Van A', 'VN', 'ST');
-assert.strictEqual(pDefault.preferredFoot, 'Right', 'preferredFoot default should be Right');
-assert.strictEqual(pDefault.weakFoot, 4, 'weakFoot default for ST should be 4');
-assert.strictEqual(pDefault.skillMoves, 3, 'skillMoves default for ST should be 3');
+assert.ok(['Right', 'Left'].includes(pDefault.preferredFoot), 'preferredFoot should be Right or Left');
+assert.strictEqual(pDefault.preferredFoot, pDefault.preferredFootSide, 'preferredFoot should equal preferredFootSide');
+assert.ok(pDefault.preferredFootStars >= 1 && pDefault.preferredFootStars <= 5, 'preferredFootStars in [1, 5]');
+assert.ok(pDefault.weakFoot >= 1 && pDefault.weakFoot <= pDefault.preferredFootStars, 'weakFoot must be <= preferredFootStars');
+assert.ok(pDefault.skillMoves >= 1 && pDefault.skillMoves <= 4, 'skillMoves initial must be <= 4');
 assert.strictEqual(pDefault.weakFootTrainProgress, 0, 'weakFootTrainProgress should be 0');
 assert.strictEqual(pDefault.skillMovesTrainProgress, 0, 'skillMovesTrainProgress should be 0');
 
 const pGK = createInitialPlayer('Tran Van B', 'VN', 'GK');
-assert.strictEqual(pGK.weakFoot, 2, 'weakFoot default for GK should be 2');
-assert.strictEqual(pGK.skillMoves, 1, 'skillMoves default for GK should be 1');
+assert.ok(pGK.weakFoot <= pGK.preferredFootStars, 'GK weakFoot <= preferredFootStars');
+assert.ok(pGK.skillMoves <= 4, 'GK skillMoves <= 4');
 
 const pDF = createInitialPlayer('Le Van C', 'VN', 'CB');
-assert.strictEqual(pDF.weakFoot, 3, 'weakFoot default for CB should be 3');
-assert.strictEqual(pDF.skillMoves, 2, 'skillMoves default for CB should be 2');
+assert.ok(pDF.weakFoot <= pDF.preferredFootStars, 'CB weakFoot <= preferredFootStars');
+assert.ok(pDF.skillMoves <= 4, 'CB skillMoves <= 4');
 console.log('✓ Test 1 passed: State defaults for all positions are correct.');
 
 console.log('--- TEST 2: Weak Foot Modifier Calculations ---');

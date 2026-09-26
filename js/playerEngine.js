@@ -4,16 +4,18 @@
  * tăng trưởng động (dynamic growth), tác động sau trận và GOAT score.
  */
 
-import { 
-  POSITION_CONFIG, 
-  LIFESTYLE_CATALOG, 
-  FIFA_STATS, 
+import {
+  POSITION_CONFIG,
+  LIFESTYLE_CATALOG,
+  FIFA_STATS,
   getInitialStatsForPosition,
   SPONSORSHIP_CATEGORIES,
   SPONSORSHIP_BRANDS,
   AGENTS_DATA,
   SUB_STATS_CONFIG,
   generateSubStatsFromFaceStats,
+  generateInitialSubStats,
+  rollInitialFootAndSkills,
   syncFaceStatsFromSubStats,
   syncSubStatsFromFaceStats,
   getSubStat,
@@ -23,6 +25,8 @@ import {
 export {
   SUB_STATS_CONFIG,
   generateSubStatsFromFaceStats,
+  generateInitialSubStats,
+  rollInitialFootAndSkills,
   syncFaceStatsFromSubStats,
   syncSubStatsFromFaceStats,
   getSubStat,
@@ -85,64 +89,64 @@ export function getFameTier(famePoints = 0) {
 
 export const TACTIC_CONFIG = {
   ATTACKING: {
-    id:                 'ATTACKING',
-    name:               '⚔️ Tấn Công Áp Đặt',
-    ratingBonus:        +6,    // ratingBonus: +6
-    stamCostMult:       1.30,  // stamCostMult: 1.30
-    cleanSheetMult:     0.80,  // cleanSheetMult: 0.80
-    goalMult:           1.15,
-    assistMult:         1.15,
-    injuryRiskAdd:      0.08,
-    winChanceAdd:       0.05,
-    tackleMult:         0.90,
+    id: 'ATTACKING',
+    name: '⚔️ Tấn Công Áp Đặt',
+    ratingBonus: +6,    // ratingBonus: +6
+    stamCostMult: 1.30,  // stamCostMult: 1.30
+    cleanSheetMult: 0.80,  // cleanSheetMult: 0.80
+    goalMult: 1.15,
+    assistMult: 1.15,
+    injuryRiskAdd: 0.08,
+    winChanceAdd: 0.05,
+    tackleMult: 0.90,
   },
   GEGENPRESSING: {
-    id:                 'GEGENPRESSING',
-    name:               '🔥 Gegenpressing',
-    ratingBonus:        +9,    // ratingBonus: +9
-    stamCostMult:       1.45,  // stamCostMult: 1.45
-    cleanSheetMult:     0.90,  // cleanSheetMult: 0.90
-    goalMult:           1.25,
-    assistMult:         1.25,
-    injuryRiskAdd:      0.15,  // Tiêu hao thể lực rất cao, rủi ro chấn thương cao
-    winChanceAdd:       0.08,
-    tackleMult:         1.30,  // Tăng mạnh cơ hội tắc bóng
+    id: 'GEGENPRESSING',
+    name: '🔥 Gegenpressing',
+    ratingBonus: +9,    // ratingBonus: +9
+    stamCostMult: 1.45,  // stamCostMult: 1.45
+    cleanSheetMult: 0.90,  // cleanSheetMult: 0.90
+    goalMult: 1.25,
+    assistMult: 1.25,
+    injuryRiskAdd: 0.15,  // Tiêu hao thể lực rất cao, rủi ro chấn thương cao
+    winChanceAdd: 0.08,
+    tackleMult: 1.30,  // Tăng mạnh cơ hội tắc bóng
   },
   BALANCED: {
-    id:                 'BALANCED',
-    name:               '⚖️ Cân Bằng',
-    ratingBonus:        0,     // ratingBonus: 0
-    stamCostMult:       1.00,  // stamCostMult: 1.00
-    cleanSheetMult:     1.00,  // cleanSheetMult: 1.00
-    goalMult:           1.0,
-    assistMult:         1.0,
-    injuryRiskAdd:      0,
-    winChanceAdd:       0,
-    tackleMult:         1.0,
+    id: 'BALANCED',
+    name: '⚖️ Cân Bằng',
+    ratingBonus: 0,     // ratingBonus: 0
+    stamCostMult: 1.00,  // stamCostMult: 1.00
+    cleanSheetMult: 1.00,  // cleanSheetMult: 1.00
+    goalMult: 1.0,
+    assistMult: 1.0,
+    injuryRiskAdd: 0,
+    winChanceAdd: 0,
+    tackleMult: 1.0,
   },
   DEFENSIVE_COUNTER: {
-    id:                 'DEFENSIVE_COUNTER',
-    name:               '🛡️ Phản Công Nhanh',
-    ratingBonus:        -3,    // ratingBonus: -3
-    stamCostMult:       0.70,  // stamCostMult: 0.70
-    cleanSheetMult:     1.35,  // cleanSheetMult: 1.35
-    goalMult:           0.85,
-    assistMult:         0.90,
-    injuryRiskAdd:      -0.05,
-    winChanceAdd:       0.06,
-    tackleMult:         1.10,
+    id: 'DEFENSIVE_COUNTER',
+    name: '🛡️ Phản Công Nhanh',
+    ratingBonus: -3,    // ratingBonus: -3
+    stamCostMult: 0.70,  // stamCostMult: 0.70
+    cleanSheetMult: 1.35,  // cleanSheetMult: 1.35
+    goalMult: 0.85,
+    assistMult: 0.90,
+    injuryRiskAdd: -0.05,
+    winChanceAdd: 0.06,
+    tackleMult: 1.10,
   },
   PARK_THE_BUS: {
-    id:                 'PARK_THE_BUS',
-    name:               '🚌 Dựng Xe Buýt',
-    ratingBonus:        -6,    // ratingBonus: -6
-    stamCostMult:       0.55,  // stamCostMult: 0.55
-    cleanSheetMult:     1.60,  // cleanSheetMult: 1.60 (Bảo toàn thể lực tối đa, giữ sạch lưới)
-    goalMult:           0.65,
-    assistMult:         0.70,
-    injuryRiskAdd:      -0.08,
-    winChanceAdd:       0.02,
-    tackleMult:         1.25,
+    id: 'PARK_THE_BUS',
+    name: '🚌 Dựng Xe Buýt',
+    ratingBonus: -6,    // ratingBonus: -6
+    stamCostMult: 0.55,  // stamCostMult: 0.55
+    cleanSheetMult: 1.60,  // cleanSheetMult: 1.60 (Bảo toàn thể lực tối đa, giữ sạch lưới)
+    goalMult: 0.65,
+    assistMult: 0.70,
+    injuryRiskAdd: -0.08,
+    winChanceAdd: 0.02,
+    tackleMult: 1.25,
   },
 };
 
@@ -667,10 +671,10 @@ export function allocateSubStatPoint(player, subStatKey, amount = 1) {
   const cost = getStatUpgradeCost(curVal);
   const currentSP = Math.max(0, Number(player.skillPoints) || 0);
   if (currentSP < cost) {
-    return { 
-      success: false, 
+    return {
+      success: false,
       cost,
-      reason: `Bạn không đủ Điểm Tiềm Năng (SP). Cần ${cost} SP để nâng cấp (Hiện có: ${currentSP} SP).` 
+      reason: `Bạn không đủ Điểm Tiềm Năng (SP). Cần ${cost} SP để nâng cấp (Hiện có: ${currentSP} SP).`
     };
   }
 
@@ -763,13 +767,13 @@ export function getSpecialTraitUpgradeCost(player, traitType) {
     }
     const cost = SPECIAL_TRAIT_UPGRADE_COSTS.weakFoot[cur] || 35;
     if (cur >= prefStars) {
-      return { 
-        canUpgrade: false, 
-        isMax: false, 
-        cost, 
-        nextLevel: cur + 1, 
-        blockedByPrefFoot: true, 
-        reason: 'Chân nghịch không thể vượt quá cấp sao chân thuận. Cần nâng Chân Thuận trước!' 
+      return {
+        canUpgrade: false,
+        isMax: false,
+        cost,
+        nextLevel: cur + 1,
+        blockedByPrefFoot: true,
+        reason: 'Chân nghịch không thể vượt quá cấp sao chân thuận. Cần nâng Chân Thuận trước!'
       };
     }
     return { canUpgrade: currentSP >= cost, isMax: false, cost, nextLevel: cur + 1 };
@@ -1055,8 +1059,8 @@ export function calculateMatchPerformanceBonus(simOrPlayer, playerOrStats, outco
   const actualSaves = Number(pStats.saves || 0);
 
   // Thù lao ra sân cơ bản (Base Appearance Fee): tượng trưng 2% - 5% lương tuần (học viện: ~€20 - €50)
-  const baseFee = isAcademy 
-    ? Math.max(20, Math.min(50, Math.round(weeklyWage * 0.08))) 
+  const baseFee = isAcademy
+    ? Math.max(20, Math.min(50, Math.round(weeklyWage * 0.08)))
     : Math.max(50, Math.round(weeklyWage * 0.03));
 
   // Phân loại nhóm vị trí

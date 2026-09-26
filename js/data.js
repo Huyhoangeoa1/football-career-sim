@@ -343,6 +343,89 @@ export function generateSubStatsFromFaceStats(faceStats = {}, position = 'ST') {
 }
 
 /**
+ * Sinh ngẫu nhiên toàn bộ 29 chỉ số con (subStats) trong khoảng [min, max] (mặc định 55 - 60)
+ * @param {number} min Mốc cận dưới (mặc định 55)
+ * @param {number} max Mốc cận trên (mặc định 60)
+ * @returns {object} Map 29 chỉ số con
+ */
+export function generateInitialSubStats(min = 55, max = 60) {
+  const result = {};
+  for (const groupConf of Object.values(SUB_STATS_CONFIG)) {
+    for (const stat of groupConf.stats) {
+      result[stat.key] = Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+  }
+  return result;
+}
+
+/**
+ * Random ngẫu nhiên kèo chân, số sao chân thuận, chân nghịch và kỹ thuật sao theo bảng trọng số chuẩn
+ * @returns {{ preferredFootSide: string, preferredFoot: string, preferredFootStars: number, weakFoot: number, skillMoves: number }}
+ */
+export function rollInitialFootAndSkills() {
+  // 1. Kèo chân thuận (50% Right / 50% Left)
+  const preferredFootSide = Math.random() < 0.5 ? 'Right' : 'Left';
+  const preferredFoot = preferredFootSide;
+
+  // 2. Chân thuận (preferredFootStars từ 1⭐ đến 5⭐):
+  // 1⭐: 10%, 2⭐: 25%, 3⭐: 40%, 4⭐: 20%, 5⭐: 5%
+  const rPref = Math.random();
+  let preferredFootStars = 3;
+  if (rPref < 0.10) {
+    preferredFootStars = 1;
+  } else if (rPref < 0.35) { // 0.10 + 0.25
+    preferredFootStars = 2;
+  } else if (rPref < 0.75) { // 0.35 + 0.40
+    preferredFootStars = 3;
+  } else if (rPref < 0.95) { // 0.75 + 0.20
+    preferredFootStars = 4;
+  } else {                   // 0.95 đến 1.00 (5%)
+    preferredFootStars = 5;
+  }
+
+  // 3. Chân nghịch (weakFoot từ 1⭐ đến preferredFootStars):
+  // Tỷ lệ giảm dần theo cấp sao:
+  // 1⭐: 45%, 2⭐: 35%, 3⭐: 15% (nếu >= 3⭐), 4⭐: 4% (nếu >= 4⭐), 5⭐: 1% (chỉ khi chân thuận = 5⭐)
+  const wfWeightTable = [0.45, 0.35, 0.15, 0.04, 0.01].slice(0, preferredFootStars);
+  const totalWfWeight = wfWeightTable.reduce((sum, w) => sum + w, 0);
+  const rWf = Math.random() * totalWfWeight;
+  let accWf = 0;
+  let weakFoot = 1;
+  for (let i = 0; i < wfWeightTable.length; i++) {
+    accWf += wfWeightTable[i];
+    if (rWf <= accWf) {
+      weakFoot = i + 1;
+      break;
+    }
+  }
+  // Đảm bảo tuyệt đối weakFoot <= preferredFootStars
+  weakFoot = Math.max(1, Math.min(preferredFootStars, weakFoot));
+
+  // 4. Kỹ thuật sao (skillMoves từ 1⭐ đến 4⭐, 5⭐ & 6⭐ là 0%):
+  // 1⭐: 30%, 2⭐: 45%, 3⭐: 20%, 4⭐: 5%
+  const rSkill = Math.random();
+  let skillMoves = 2;
+  if (rSkill < 0.30) {
+    skillMoves = 1;
+  } else if (rSkill < 0.75) { // 0.30 + 0.45
+    skillMoves = 2;
+  } else if (rSkill < 0.95) { // 0.75 + 0.20
+    skillMoves = 3;
+  } else {                   // 0.95 đến 1.00 (5%)
+    skillMoves = 4;
+  }
+
+  return {
+    preferredFootSide,
+    preferredFoot,
+    preferredFootStars,
+    weakFoot,
+    skillMoves
+  };
+}
+
+
+/**
  * Lấy giá trị của một chỉ số con cụ thể (với cơ chế fallback an toàn)
  * @param {object} player 
  * @param {string} subKey Key của chỉ số con ('finishing', 'vision', 'composure', ...)

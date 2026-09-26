@@ -634,8 +634,6 @@ export function selectAcademy(academyId, element) {
 export function createNewPlayer(name = "", nation = "VN", position = "ST", academyId = null) {
   const player = resetPlayerState(name, nation, position, academyId);
   player.cardTheme = 'future';
-  player.baseRating = 55;
-  player.ovr = 55;
   initSeasonScheduleAndTable(player);
 
   const logContainer = document.getElementById('careerLog');

@@ -8,9 +8,11 @@ import {
   RIVALS_DATA, 
   getPositionGroup, 
   getRandomPlayerNameByNat,
-  getInitialStatsForPosition,
-  generateSubStatsFromFaceStats 
+  generateInitialSubStats,
+  rollInitialFootAndSkills,
+  syncFaceStatsFromSubStats 
 } from './data.js';
+import { calculateOVR, syncLegacyAttrs } from './playerEngine.js';
 
 export const MAX_STAT_LIMIT = 110;
 
@@ -38,70 +40,17 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     ballonDor: 0
   };
 
-  // Base attributes by specific position (11 positions) - Centered at Starting OVR 55
-  let attr1 = 55, attr2 = 58, attr3 = 51, attr4 = 56;
-  let stam = 55, form = 58;
-
-  const pUpper = String(pos || "ST").toUpperCase();
-
-  if (pUpper === "GK") {
-    // Thủ môn: Phản xạ (Reflexes), Bắt bóng (Handling), Phát bóng (Kicking), Chọn vị trí (Positioning)
-    attr1 = 56; attr2 = 55; attr3 = 54; attr4 = 55;
-    stam = 55; form = 58;
-  } else if (pUpper === "CB") {
-    // Trung vệ: Tăng DEF & PHY (Tắc bóng, Sức mạnh/PHY, Không chiến, Đọc tình huống)
-    attr1 = 58; attr2 = 56; attr3 = 54; attr4 = 52;
-    stam = 56; form = 58;
-  } else if (pUpper === "LB" || pUpper === "RB") {
-    // Hậu vệ cánh: Tăng PAC, Crossing, DEF, Thể lực
-    attr1 = 60; attr2 = 54; attr3 = 52; attr4 = 54;
-    stam = 58; form = 58;
-  } else if (pUpper === "CDM") {
-    // Tiền vệ phòng ngự: Tăng DEF, PHY, Chuyền dài
-    attr1 = 56; attr2 = 56; attr3 = 54; attr4 = 54;
-    stam = 56; form = 58;
-  } else if (pUpper === "CM") {
-    // Tiền vệ trung tâm: Tăng PAS, DRI, Nhãn quan
-    attr1 = 56; attr2 = 54; attr3 = 55; attr4 = 55;
-    stam = 56; form = 58;
-  } else if (pUpper === "CAM") {
-    // Tiền vệ công: Tăng PAS, DRI, Nhãn quan, Sút xa
-    attr1 = 57; attr2 = 56; attr3 = 54; attr4 = 53;
-    stam = 54; form = 58;
-  } else if (pUpper === "LM" || pUpper === "RM") {
-    // Tiền vệ cánh: Tăng PAC, DRI, Tạt bóng
-    attr1 = 60; attr2 = 54; attr3 = 54; attr4 = 52;
-    stam = 56; form = 58;
-  } else if (pUpper === "LW" || pUpper === "RW") {
-    // Tiền đạo cánh: Tăng PAC, DRI, Dứt điểm
-    attr1 = 60; attr2 = 56; attr3 = 54; attr4 = 50;
-    stam = 55; form = 58;
-  } else if (pUpper === "ST" || pUpper === "CF") {
-    // Tiền đạo cắm: Tăng SHO (55), Tốc độ (58), Chuyền/Rê (51), Phòng thủ/Thể chất (56)
-    attr1 = 55; attr2 = 58; attr3 = 51; attr4 = 56;
-    stam = 55; form = 58;
-  } else if (pUpper === "DF") {
-    attr1 = 57; attr2 = 55; attr3 = 55; attr4 = 53;
-    stam = 56; form = 58;
-  } else if (pUpper === "MF") {
-    attr1 = 56; attr2 = 55; attr3 = 55; attr4 = 54;
-    stam = 56; form = 58;
-  } else {
-    // Default FW
-    attr1 = 55; attr2 = 58; attr3 = 51; attr4 = 56;
-    stam = 55; form = 58;
-  }
-
   const finalName = (customName && customName.trim()) 
     ? customName.trim() 
     : (getRandomPlayerNameByNat(nationality.id) || "Tân Binh Vô Danh");
 
-  const initialFaceStats = getInitialStatsForPosition ? getInitialStatsForPosition(pos) : {
-    pac: 55, sho: 55, pas: 55, dri: 55, def: 55, phy: 55
-  };
-  const initialSubStats = generateSubStatsFromFaceStats(initialFaceStats, pos);
+  // 1. Sinh ngẫu nhiên toàn bộ 29 chỉ số con trong khoảng [55, 60]
+  const initialSubStats = generateInitialSubStats(55, 60);
 
-  return {
+  // 2. Random kèo chân và kỹ thuật sao theo bảng trọng số chuẩn
+  const initialFootAndSkills = rollInitialFootAndSkills();
+
+  const player = {
     name: finalName,
     nationality: nationality,
     academy: academy,
@@ -112,25 +61,25 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     seasonCount: 1,
     seasonsPlayed: 0,
     
-    // 6 Face Stats (FIFA / EA FC standard)
-    stats: initialFaceStats,
+    // 6 Face Stats (sẽ được tự động đồng bộ từ 29 subStats qua syncFaceStatsFromSubStats)
+    stats: { pac: 55, sho: 55, pas: 55, dri: 55, def: 55, phy: 55 },
 
-    // 29 Detailed Sub-Attributes (EA FC 26 standard)
+    // 29 Detailed Sub-Attributes (EA FC standard, giá trị ngẫu nhiên 55-60)
     subStats: initialSubStats,
 
     // Hệ thống Điểm Tiềm Năng Thủ Công (Manual Skill Points Allocation)
     skillPoints: 0,
     totalSkillPointsEarned: 0,
 
-    // 4 Position-specific core attributes (0-99)
-    attr1,
-    attr2,
-    attr3,
-    attr4,
+    // 4 Position-specific core attributes (được đồng bộ qua syncLegacyAttrs)
+    attr1: 55,
+    attr2: 55,
+    attr3: 55,
+    attr4: 55,
 
     // General attributes
-    stam,        // Thể lực (Fitness)
-    form,        // Phong độ (Form)
+    stam: 55,        // Thể lực (Fitness)
+    form: 58,        // Phong độ (Form)
     fame: 10,    // Danh tiếng (Fame)
     morale: 85,  // Tinh thần (Morale)
     
@@ -295,11 +244,11 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     customAvatarUrl: '', // URL ảnh khuôn mặt cầu thủ tự chọn (PNG trong suốt)
 
     // ── Player Traits: Foot, Weak Foot & Skill Moves (EA FC Style) ───────
-    preferredFootSide: 'Right', // 'Right' | 'Left' (Kèo chân thuận)
-    preferredFoot: 'Right',     // Alias tương thích ngược
-    preferredFootStars: (pUpper === 'GK' || ['CB', 'DF'].includes(pUpper)) ? 3 : 4, // 1 - 5 ⭐
-    weakFoot: (pUpper === 'GK' ? 2 : (['CB', 'DF', 'LB', 'RB'].includes(pUpper) ? 3 : 4)), // 1 - 5 ⭐ (<= preferredFootStars)
-    skillMoves: (pUpper === 'GK' ? 1 : (['CB', 'DF', 'LB', 'RB'].includes(pUpper) ? 2 : 3)), // 1 - 6 ⭐ (6 = Trickster+)
+    preferredFootSide: initialFootAndSkills.preferredFootSide, // 'Right' | 'Left' (Random 50/50)
+    preferredFoot: initialFootAndSkills.preferredFoot,         // Alias tương thích ngược
+    preferredFootStars: initialFootAndSkills.preferredFootStars, // 1 - 5 ⭐
+    weakFoot: initialFootAndSkills.weakFoot,                   // 1 - 5 ⭐ (<= preferredFootStars)
+    skillMoves: initialFootAndSkills.skillMoves,               // 1 - 4 ⭐ (khi khởi tạo)
     weakFootTrainProgress: 0,   // Số buổi tập tích lũy để thăng cấp sao chân nghịch (cần 5)
     skillMovesTrainProgress: 0,  // Số buổi tập tích lũy để thăng cấp sao kỹ thuật (cần 6)
 
@@ -310,6 +259,19 @@ export function createInitialPlayer(customName = "", natId = "VN", pos = "ST", a
     consecutiveGoodMatches: 0, // Chuỗi trận thăng hoa (Rating >= 7.5)
     consecutiveBadMatches: 0   // Chuỗi trận sa sút (Rating < 6.0)
   };
+
+  // Đồng bộ 6 chỉ số mặt thẻ (PAC, SHO, PAS, DRI, DEF, PHY) từ 29 chỉ số con
+  syncFaceStatsFromSubStats(player);
+
+  // Đồng bộ 4 chỉ số phụ vị trí (attr1..attr4)
+  syncLegacyAttrs(player);
+
+  // Tính toán OVR chính xác cho tân binh học viện (dao động chuẩn quanh mốc 56 - 59 OVR)
+  const initialOVR = calculateOVR(player);
+  player.ovr = initialOVR;
+  player.baseRating = initialOVR;
+
+  return player;
 }
 
 export const gameState = {
@@ -332,8 +294,6 @@ export function setPlayer(newPlayer) {
 export function resetPlayerState(name, natId, pos = "ST", academyId = null) {
   gameState.player = createInitialPlayer(name, natId, pos, academyId);
   gameState.player.cardTheme = 'future';
-  gameState.player.baseRating = 55;
-  gameState.player.ovr = 55;
   gameState.selectedPos = pos || "ST";
   gameState.selectedNatId = natId || "VN";
   gameState.selectedAcademyId = academyId || (gameState.player.academy ? gameState.player.academy.id : null);
