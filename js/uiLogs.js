@@ -6,6 +6,7 @@ import { formatCurrency } from './uiCore.js';
 import { triggerConfetti } from './uiCore.js';
 import { getPlayer } from './state.js';
 import { getFameTier } from './playerEngine.js';
+import { generateTeamOfTheSeason } from './seasonEngine.js';
 /* =========================================================================
    7. CAREER LOGS — QUẢN LÝ NHẬT KÝ MÙA GIẢI
    ========================================================================= */
@@ -127,6 +128,94 @@ export function addFullSeasonStructuredLog(player, title, actionReport, reportRo
   logContainer.insertBefore(entry, logContainer.firstChild);
 }
 
+/**
+ * Hiển thị sa bàn chiến thuật Đội Hình Tiêu Biểu Mùa Giải (TOTS 4-3-3)
+ * @param {object} tots Dữ liệu TOTS
+ * @param {HTMLElement} containerEl Khung chứa DOM
+ */
+export function renderTeamOfTheSeasonPitch(tots, containerEl) {
+  if (!containerEl || !tots || !tots.lineup) return;
+
+  const { tournamentName = 'Giải Đấu', year = 2026, playerIncluded = false, lineup } = tots;
+
+  const renderCard = (node, defaultPos) => {
+    if (!node) return `<div class="tots-card-placeholder"></div>`;
+    const isPlayer = Boolean(node.isPlayer);
+    const pos = node.pos || defaultPos;
+    const avatar = isPlayer 
+      ? '⭐' 
+      : (pos === 'GK' ? '🧤' : (['LB', 'RB', 'CB'].includes(pos) ? '🛡️' : (['LW', 'RW', 'ST'].includes(pos) ? '⚽' : '🎯')));
+
+    return `
+      <div class="tots-pitch-card ${isPlayer ? 'tots-card-user' : ''}">
+        <div class="tots-card-badge-row">
+          <span class="tots-card-pos">${pos}</span>
+          ${isPlayer ? '<span class="tots-card-you-pill">⭐ BẠN</span>' : ''}
+        </div>
+        <div class="tots-card-avatar">${avatar}</div>
+        <div class="tots-card-name" title="${node.name || ''}">${node.name || ''}</div>
+        <div class="tots-card-club" title="${node.club || ''}">${node.club || ''}</div>
+        <div class="tots-card-stat">${node.statText || ''}</div>
+        <div class="tots-card-score">${node.mvpScore ? node.mvpScore + ' pts' : (node.rating || '')}</div>
+      </div>
+    `;
+  };
+
+  containerEl.innerHTML = `
+    <div class="tots-pitch-board">
+      <div class="tots-pitch-header">
+        <div class="tots-pitch-header-badge">⭐ SƠ ĐỒ CHIẾN THUẬT 4-3-3</div>
+        <div class="tots-pitch-title">ĐỘI HÌNH TIÊU BIỂU ${String(tournamentName).toUpperCase()}</div>
+        <div class="tots-pitch-sub">Mùa giải ${year} • 11 Ngôi sao xuất sắc nhất được Hội Đồng Bình Chọn</div>
+        ${playerIncluded ? `
+          <div class="tots-player-congrats-banner">
+            ✨ CHÚC MỪNG! Bạn đã chính thức góp mặt trong Đội Hình Tiêu Biểu! (+500 Fame, +5 Morale)
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="tots-pitch">
+        <div class="tots-pitch-lines">
+          <div class="pitch-halfway"></div>
+          <div class="pitch-center-circle"></div>
+          <div class="pitch-center-spot"></div>
+          <div class="pitch-box-top"></div>
+          <div class="pitch-box-bottom"></div>
+        </div>
+
+        <div class="tots-pitch-players">
+          <!-- Hàng tiền đạo (FW): LW — ST — RW -->
+          <div class="tots-row tots-row-fw">
+            ${renderCard(lineup.lw, 'LW')}
+            ${renderCard(lineup.st, 'ST')}
+            ${renderCard(lineup.rw, 'RW')}
+          </div>
+
+          <!-- Hàng tiền vệ (MF): LCM — CM — RCM -->
+          <div class="tots-row tots-row-mf">
+            ${renderCard(lineup.lcm, 'LCM')}
+            ${renderCard(lineup.cm, 'CM')}
+            ${renderCard(lineup.rcm, 'RCM')}
+          </div>
+
+          <!-- Hàng hậu vệ (DF): LB — CB — CB — RB -->
+          <div class="tots-row tots-row-df">
+            ${renderCard(lineup.lb, 'LB')}
+            ${renderCard(lineup.cb1, 'CB')}
+            ${renderCard(lineup.cb2, 'CB')}
+            ${renderCard(lineup.rb, 'RB')}
+          </div>
+
+          <!-- Khung gỗ (GK) -->
+          <div class="tots-row tots-row-gk">
+            ${renderCard(lineup.gk, 'GK')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export function showSeasonSummaryModal(player, title, actionReport, reportRows = [], seasonTotalSummary = "", seasonMatches = 0, seasonGoals = 0, seasonAssists = 0, seasonCleanSheets = 0, seasonSaves = 0, seasonTackles = 0, trophiesWonCount = 0, isBallonDorWon = false, onContinue) {
   const modal = document.getElementById('seasonSummaryModal');
   if (!modal) {
@@ -139,6 +228,47 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
   const nextAge = completedAge + 1;
   const nextYear = completedYear + 1;
   const isYouth = Boolean(player.isAcademyStage || completedAge === 16 || nextAge === 17);
+
+  // 1. Tự sinh hoặc nạp Đội Hình Tiêu Biểu Mùa Giải (TOTS 4-3-3)
+  const tots = player.lastSeasonTOTS || (typeof generateTeamOfTheSeason === 'function' ? generateTeamOfTheSeason(player) : null);
+
+  // 2. Thiết lập chuyển tab giữa Báo Cáo Thành Tích & Sa Bàn TOTS
+  const btnOverview = document.getElementById('btnSeasonTabOverview');
+  const btnTots = document.getElementById('btnSeasonTabTots');
+  const overviewContent = document.getElementById('seasonOverviewTabContent');
+  const totsContent = document.getElementById('seasonTotsTabContent');
+  const totsBadge = document.getElementById('totsPlayerInBadge');
+
+  if (totsBadge) {
+    totsBadge.style.display = (tots && tots.playerIncluded) ? 'inline-block' : 'none';
+  }
+
+  if (btnOverview && btnTots && overviewContent && totsContent) {
+    btnOverview.onclick = (e) => {
+      if (e) e.preventDefault();
+      btnOverview.classList.add('active');
+      btnTots.classList.remove('active');
+      overviewContent.style.display = 'block';
+      totsContent.style.display = 'none';
+    };
+    btnTots.onclick = (e) => {
+      if (e) e.preventDefault();
+      btnTots.classList.add('active');
+      btnOverview.classList.remove('active');
+      overviewContent.style.display = 'none';
+      totsContent.style.display = 'block';
+    };
+    // Mặc định mở tab Báo Cáo
+    btnOverview.classList.add('active');
+    btnTots.classList.remove('active');
+    overviewContent.style.display = 'block';
+    totsContent.style.display = 'none';
+  }
+
+  // 3. Render sa bàn chiến thuật TOTS vào tab TOTS
+  if (totsContent && tots) {
+    renderTeamOfTheSeasonPitch(tots, totsContent);
+  }
 
   const badgeEl = document.getElementById('seasonModalBadge');
   if (badgeEl) badgeEl.innerText = `🏆 LỄ TRAO GIẢI & TỔNG KẾT MÙA GIẢI: ${completedAge} TUỔI (NĂM ${completedYear})`;
@@ -392,6 +522,33 @@ export function showSeasonSummaryModal(player, title, actionReport, reportRows =
         }
       });
       rowsContainer.appendChild(otherContainer);
+    }
+
+    // 5. Khối biểu ngữ truy cập nhanh Đội Hình Tiêu Biểu (TOTS Banner)
+    if (tots) {
+      const totsBanner = document.createElement('div');
+      totsBanner.className = 'tots-callout-banner';
+      totsBanner.style.cssText = tots.playerIncluded
+        ? "background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(16, 185, 129, 0.12)); border: 1.5px solid #fbbf24; border-radius: 8px; padding: 10px 14px; margin-top: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);"
+        : "background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 14px; margin-top: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;";
+      totsBanner.innerHTML = `
+        <div style="text-align: left;">
+          <div style="font-weight: 800; font-size: 0.92rem; color: ${tots.playerIncluded ? '#fbbf24' : '#38bdf8'}; display: flex; align-items: center; gap: 6px;">
+            <span>⭐</span> <span>${tots.playerIncluded ? 'BẠN ĐÃ LỌT VÀO ĐỘI HÌNH TIÊU BIỂU (TOTS)!' : 'ĐỘI HÌNH TIÊU BIỂU MÙA GIẢI (TOTS 4-3-3)'}</span>
+          </div>
+          <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
+            ${tots.playerIncluded ? 'Nhấn để chiêm ngưỡng vị trí danh giá của bạn trên sa bàn chiến thuật 4-3-3 ➔' : 'Nhấn để khám phá 11 ngôi sao xuất sắc nhất đại diện giải đấu ➔'}
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm" style="font-size: 0.75rem; font-weight: 800; padding: 5px 12px; background: ${tots.playerIncluded ? '#fbbf24' : '#0284c7'}; color: #000; border: none; border-radius: 6px;">
+          Xem Sơ Đồ ➔
+        </button>
+      `;
+      totsBanner.onclick = () => {
+        const btnTotsEl = document.getElementById('btnSeasonTabTots');
+        if (btnTotsEl) btnTotsEl.click();
+      };
+      rowsContainer.appendChild(totsBanner);
     }
 
     const sumDiv = document.createElement('div');

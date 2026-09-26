@@ -71,7 +71,8 @@ export {
   addFullSeasonStructuredLog,
   showSeasonSummaryModal,
   renderSeasonEndModal,
-  renderSeasonAwardsModal
+  renderSeasonAwardsModal,
+  renderTeamOfTheSeasonPitch
 } from './uiLogs.js';
 
 // ── Lifestyle Store ───────────────────────────────────────────────────────

@@ -1509,7 +1509,7 @@
 
   <!-- MODAL: TỔNG KẾT MÙA GIẢI & LỄ VINH DANH (SEASON SUMMARY MODAL) -->
   <div class="modal-overlay" id="seasonSummaryModal">
-    <div class="modal-content" style="max-width: 680px; text-align: center;">
+    <div class="modal-content" style="max-width: 800px; width: 95%; text-align: center;">
       <div class="modal-badge badge-trophy" id="seasonModalBadge">🏆 TỔNG KẾT MÙA GIẢI & VINH DANH DANH HIỆU</div>
       <div class="modal-title" id="seasonModalTitle" style="font-size: 1.45rem; color: var(--accent-gold); margin-top: 8px;">
         Vinh Quang Mùa Giải
@@ -1517,15 +1517,34 @@
       <div class="modal-desc" id="seasonModalDesc" style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 14px; line-height: 1.5;">
         <!-- Season narrative -->
       </div>
+
+      <!-- Tab Controls: Overview vs TOTS Pitch -->
+      <div class="season-modal-tabs" id="seasonModalTabs" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 14px;">
+        <button type="button" class="btn btn-sm season-tab-btn active" id="btnSeasonTabOverview" style="font-weight: 800; padding: 7px 18px; border-radius: 6px; font-size: 0.88rem;">
+          📊 Báo Cáo Mùa Giải
+        </button>
+        <button type="button" class="btn btn-sm season-tab-btn" id="btnSeasonTabTots" style="font-weight: 800; padding: 7px 18px; border-radius: 6px; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px;">
+          <span>⭐ Đội Hình Tiêu Biểu (TOTS 4-3-3)</span>
+          <span id="totsPlayerInBadge" style="display: none; background: #fbbf24; color: #000; font-size: 0.65rem; font-weight: 900; padding: 1px 6px; border-radius: 4px; box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);">⭐ BẠN GÓP MẶT</span>
+        </button>
+      </div>
       
-      <!-- Grid Cards of Trophies & Stats -->
-      <div class="season-summary-grid" id="seasonModalGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px;">
-        <!-- Stats cards rendered via JS -->
+      <!-- Tab 1: Overview Breakdown -->
+      <div id="seasonOverviewTabContent">
+        <!-- Grid Cards of Trophies & Stats -->
+        <div class="season-summary-grid" id="seasonModalGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px;">
+          <!-- Stats cards rendered via JS -->
+        </div>
+
+        <!-- Detailed Breakdown Rows -->
+        <div class="structured-report-box" id="seasonModalRows" style="text-align: left; max-height: 280px; overflow-y: auto; margin-bottom: 16px;">
+          <!-- Report rows -->
+        </div>
       </div>
 
-      <!-- Detailed Breakdown Rows -->
-      <div class="structured-report-box" id="seasonModalRows" style="text-align: left; max-height: 240px; overflow-y: auto; margin-bottom: 16px;">
-        <!-- Report rows -->
+      <!-- Tab 2: TOTS Tactical Pitch Board -->
+      <div id="seasonTotsTabContent" style="display: none; margin-bottom: 16px;">
+        <!-- Pitch board rendered via JS -->
       </div>
 
       <div style="display: flex; justify-content: center; gap: 12px;">

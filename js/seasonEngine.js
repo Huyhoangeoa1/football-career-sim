@@ -18,7 +18,7 @@ import {
 } from './data.js';
 import { getOverallPower, addTrophy, clampStats, applyTacticalModifiers, recoverStaminaBetweenMatches, processAnnualSponsorshipPayout } from './playerEngine.js';
 import { calculateTransfermarktValue } from './transferEngine.js';
-import { logCareerEvent, addCareerLog, recordChronicleMilestone, updateCompetitionTier } from './mediaEngine.js';
+import { logCareerEvent, addCareerLog, recordChronicleMilestone, updateCompetitionTier, addMediaReaction } from './mediaEngine.js';
 import {
   isSameClub,
   isClubMatch,
@@ -635,6 +635,16 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
         icon: "🏅"
       });
     }
+  }
+
+  // Tuyển chọn Đội Hình Tiêu Biểu Mùa Giải (Team of the Season - TOTS 4-3-3)
+  const totsResult = generateTeamOfTheSeason(player, curLeague?.id || curLeague?.name, player.leagueTable);
+  if (totsResult && totsResult.playerIncluded) {
+    seasonReportRows.push({
+      icon: "🌟",
+      title: "[Đội Hình Tiêu Biểu (TOTS)]",
+      text: `🌟 Vinh danh trong Đội Hình Tiêu Biểu ${totsResult.tournamentName} (Sơ đồ 4-3-3 | ${totsResult.playerMvpScore} điểm MVP)!`
+    });
   }
 
   // 2. [CÚP QUỐC GIA CHÍNH]
@@ -1759,7 +1769,8 @@ export function simulateSeasonRound(player, actionTitle, actionReport) {
     seasonTrophiesWonList,
     seasonTrophiesWon,
     isTrophyWin: seasonTrophiesWonList.length > 0 || isUnderdogMiracle,
-    ballonDorResult: ballonDorEval
+    ballonDorResult: ballonDorEval,
+    totsResult
   };
 }
 
@@ -2053,6 +2064,539 @@ export function checkAndAwardIndividualYouthAwards(player) {
   }
 
   return { topScorer: isTopScorer, topPlaymaker: isTopPlaymaker, mvp: isTopMvp };
+}
+
+/* =========================================================================
+   4.6. ĐỘI HÌNH TIÊU BIỂU MÙA GIẢI / GIẢI ĐẤU (TEAM OF THE SEASON - TOTS 4-3-3)
+   ========================================================================= */
+
+export const TOTS_LEAGUE_CANDIDATES = {
+  PREMIER_LEAGUE: {
+    GK: [
+      { name: "David Raya", club: "Arsenal FC", rating: 8.6, baseCleanSheets: 16, baseSaves: 95 },
+      { name: "Alisson Becker", club: "Liverpool FC", rating: 8.7, baseCleanSheets: 17, baseSaves: 110 },
+      { name: "Ederson", club: "Manchester City", rating: 8.6, baseCleanSheets: 16, baseSaves: 90 },
+      { name: "Emiliano Martínez", club: "Aston Villa", rating: 8.5, baseCleanSheets: 14, baseSaves: 125 }
+    ],
+    DF: [
+      { name: "Joško Gvardiol", club: "Manchester City", slot: "LB", rating: 8.6, baseCS: 16, baseTk: 65, baseG: 3, baseA: 4 },
+      { name: "Andrew Robertson", club: "Liverpool FC", slot: "LB", rating: 8.5, baseCS: 15, baseTk: 70, baseG: 1, baseA: 7 },
+      { name: "William Saliba", club: "Arsenal FC", slot: "CB", rating: 8.8, baseCS: 18, baseTk: 85, baseG: 2, baseA: 1 },
+      { name: "Virgil van Dijk", club: "Liverpool FC", slot: "CB", rating: 8.9, baseCS: 17, baseTk: 90, baseG: 4, baseA: 2 },
+      { name: "Gabriel Magalhães", club: "Arsenal FC", slot: "CB", rating: 8.6, baseCS: 17, baseTk: 80, baseG: 4, baseA: 0 },
+      { name: "Rúben Dias", club: "Manchester City", slot: "CB", rating: 8.7, baseCS: 16, baseTk: 78, baseG: 1, baseA: 1 },
+      { name: "Trent Alexander-Arnold", club: "Liverpool FC", slot: "RB", rating: 8.7, baseCS: 15, baseTk: 60, baseG: 3, baseA: 11 },
+      { name: "Ben White", club: "Arsenal FC", slot: "RB", rating: 8.5, baseCS: 17, baseTk: 75, baseG: 2, baseA: 4 },
+      { name: "Pedro Porro", club: "Tottenham", slot: "RB", rating: 8.4, baseCS: 11, baseTk: 82, baseG: 3, baseA: 7 }
+    ],
+    MF: [
+      { name: "Rodri", club: "Manchester City", slot: "CM", rating: 9.1, baseG: 8, baseA: 9, baseTk: 92 },
+      { name: "Kevin De Bruyne", club: "Manchester City", slot: "LCM", rating: 9.0, baseG: 7, baseA: 18, baseTk: 45 },
+      { name: "Martin Ødegaard", club: "Arsenal FC", slot: "RCM", rating: 8.8, baseG: 11, baseA: 14, baseTk: 55 },
+      { name: "Declan Rice", club: "Arsenal FC", slot: "LCM", rating: 8.7, baseG: 7, baseA: 9, baseTk: 88 },
+      { name: "Alexis Mac Allister", club: "Liverpool FC", slot: "CM", rating: 8.6, baseG: 6, baseA: 8, baseTk: 78 },
+      { name: "Cole Palmer", club: "Chelsea FC", slot: "RCM", rating: 8.9, baseG: 22, baseA: 11, baseTk: 35 },
+      { name: "Bruno Fernandes", club: "Manchester United", slot: "CM", rating: 8.5, baseG: 10, baseA: 12, baseTk: 60 }
+    ],
+    FW: [
+      { name: "Erling Haaland", club: "Manchester City", slot: "ST", rating: 9.2, baseG: 29, baseA: 5 },
+      { name: "Mohamed Salah", club: "Liverpool FC", slot: "RW", rating: 9.0, baseG: 23, baseA: 13 },
+      { name: "Phil Foden", club: "Manchester City", slot: "LW", rating: 8.9, baseG: 19, baseA: 10 },
+      { name: "Bukayo Saka", club: "Arsenal FC", slot: "RW", rating: 8.8, baseG: 16, baseA: 12 },
+      { name: "Alexander Isak", club: "Newcastle United", slot: "ST", rating: 8.7, baseG: 21, baseA: 4 },
+      { name: "Son Heung-min", club: "Tottenham", slot: "LW", rating: 8.6, baseG: 17, baseA: 9 },
+      { name: "Ollie Watkins", club: "Aston Villa", slot: "ST", rating: 8.6, baseG: 19, baseA: 13 }
+    ]
+  },
+  LA_LIGA: {
+    GK: [
+      { name: "Thibaut Courtois", club: "Real Madrid", rating: 8.9, baseCleanSheets: 18, baseSaves: 105 },
+      { name: "Marc-André ter Stegen", club: "FC Barcelona", rating: 8.7, baseCleanSheets: 17, baseSaves: 98 },
+      { name: "Jan Oblak", club: "Atletico Madrid", rating: 8.6, baseCleanSheets: 15, baseSaves: 115 },
+      { name: "Unai Simón", club: "Athletic Bilbao", rating: 8.5, baseCleanSheets: 16, baseSaves: 100 }
+    ],
+    DF: [
+      { name: "Ferland Mendy", club: "Real Madrid", slot: "LB", rating: 8.5, baseCS: 17, baseTk: 68, baseG: 1, baseA: 2 },
+      { name: "Alejandro Balde", club: "FC Barcelona", slot: "LB", rating: 8.4, baseCS: 15, baseTk: 62, baseG: 1, baseA: 5 },
+      { name: "Antonio Rüdiger", club: "Real Madrid", slot: "CB", rating: 8.9, baseCS: 19, baseTk: 88, baseG: 3, baseA: 1 },
+      { name: "Pau Cubarsí", club: "FC Barcelona", slot: "CB", rating: 8.6, baseCS: 16, baseTk: 80, baseG: 1, baseA: 2 },
+      { name: "Ronald Araújo", club: "FC Barcelona", slot: "CB", rating: 8.7, baseCS: 16, baseTk: 85, baseG: 2, baseA: 1 },
+      { name: "Éder Militão", club: "Real Madrid", slot: "CB", rating: 8.7, baseCS: 17, baseTk: 82, baseG: 2, baseA: 0 },
+      { name: "Dani Carvajal", club: "Real Madrid", slot: "RB", rating: 8.8, baseCS: 18, baseTk: 76, baseG: 3, baseA: 6 },
+      { name: "Jules Koundé", club: "FC Barcelona", slot: "RB", rating: 8.6, baseCS: 16, baseTk: 79, baseG: 2, baseA: 4 }
+    ],
+    MF: [
+      { name: "Jude Bellingham", club: "Real Madrid", slot: "LCM", rating: 9.2, baseG: 21, baseA: 11, baseTk: 65 },
+      { name: "Federico Valverde", club: "Real Madrid", slot: "RCM", rating: 8.9, baseG: 8, baseA: 9, baseTk: 84 },
+      { name: "Pedri", club: "FC Barcelona", slot: "CM", rating: 8.8, baseG: 6, baseA: 12, baseTk: 60 },
+      { name: "Eduardo Camavinga", club: "Real Madrid", slot: "LCM", rating: 8.6, baseG: 3, baseA: 6, baseTk: 86 },
+      { name: "Frenkie de Jong", club: "FC Barcelona", slot: "CM", rating: 8.7, baseG: 4, baseA: 8, baseTk: 70 },
+      { name: "Rodrigo De Paul", club: "Atletico Madrid", slot: "RCM", rating: 8.5, baseG: 5, baseA: 8, baseTk: 75 }
+    ],
+    FW: [
+      { name: "Vinícius Júnior", club: "Real Madrid", slot: "LW", rating: 9.3, baseG: 24, baseA: 12 },
+      { name: "Kylian Mbappé", club: "Real Madrid", slot: "ST", rating: 9.3, baseG: 31, baseA: 8 },
+      { name: "Lamine Yamal", club: "FC Barcelona", slot: "RW", rating: 9.0, baseG: 14, baseA: 16 },
+      { name: "Robert Lewandowski", club: "FC Barcelona", slot: "ST", rating: 8.9, baseG: 25, baseA: 7 },
+      { name: "Rodrygo", club: "Real Madrid", slot: "RW", rating: 8.7, baseG: 15, baseA: 9 },
+      { name: "Antoine Griezmann", club: "Atletico Madrid", slot: "LW", rating: 8.8, baseG: 18, baseA: 12 },
+      { name: "Nico Williams", club: "Athletic Bilbao", slot: "LW", rating: 8.6, baseG: 12, baseA: 14 }
+    ]
+  },
+  SERIE_A: {
+    GK: [
+      { name: "Yann Sommer", club: "Inter Milan", rating: 8.8, baseCleanSheets: 19, baseSaves: 92 },
+      { name: "Mike Maignan", club: "AC Milan", rating: 8.7, baseCleanSheets: 15, baseSaves: 108 },
+      { name: "Michele Di Gregorio", club: "Juventus", rating: 8.6, baseCleanSheets: 16, baseSaves: 112 }
+    ],
+    DF: [
+      { name: "Federico Dimarco", club: "Inter Milan", slot: "LB", rating: 8.7, baseCS: 18, baseTk: 62, baseG: 5, baseA: 8 },
+      { name: "Theo Hernández", club: "AC Milan", slot: "LB", rating: 8.6, baseCS: 14, baseTk: 72, baseG: 5, baseA: 6 },
+      { name: "Alessandro Bastoni", club: "Inter Milan", slot: "CB", rating: 8.8, baseCS: 19, baseTk: 84, baseG: 2, baseA: 4 },
+      { name: "Bremer", club: "Juventus", slot: "CB", rating: 8.7, baseCS: 17, baseTk: 88, baseG: 3, baseA: 0 },
+      { name: "Benjamin Pavard", club: "Inter Milan", slot: "CB", rating: 8.6, baseCS: 18, baseTk: 80, baseG: 1, baseA: 2 },
+      { name: "Denzel Dumfries", club: "Inter Milan", slot: "RB", rating: 8.6, baseCS: 17, baseTk: 74, baseG: 4, baseA: 6 },
+      { name: "Giovanni Di Lorenzo", club: "SSC Napoli", slot: "RB", rating: 8.5, baseCS: 15, baseTk: 76, baseG: 2, baseA: 5 }
+    ],
+    MF: [
+      { name: "Nicolò Barella", club: "Inter Milan", slot: "RCM", rating: 8.9, baseG: 6, baseA: 9, baseTk: 82 },
+      { name: "Hakan Çalhanoğlu", club: "Inter Milan", slot: "CM", rating: 8.9, baseG: 13, baseA: 8, baseTk: 75 },
+      { name: "Teun Koopmeiners", club: "Juventus", slot: "LCM", rating: 8.7, baseG: 12, baseA: 7, baseTk: 66 },
+      { name: "Henrikh Mkhitaryan", club: "Inter Milan", slot: "LCM", rating: 8.6, baseG: 5, baseA: 8, baseTk: 62 }
+    ],
+    FW: [
+      { name: "Lautaro Martínez", club: "Inter Milan", slot: "ST", rating: 9.1, baseG: 26, baseA: 6 },
+      { name: "Marcus Thuram", club: "Inter Milan", slot: "LW", rating: 8.7, baseG: 16, baseA: 9 },
+      { name: "Rafael Leão", club: "AC Milan", slot: "LW", rating: 8.8, baseG: 15, baseA: 11 },
+      { name: "Ademola Lookman", club: "Atalanta", slot: "RW", rating: 8.8, baseG: 17, baseA: 8 },
+      { name: "Dušan Vlahović", club: "Juventus", slot: "ST", rating: 8.6, baseG: 18, baseA: 4 },
+      { name: "Khvicha Kvaratskhelia", club: "SSC Napoli", slot: "RW", rating: 8.7, baseG: 13, baseA: 10 }
+    ]
+  },
+  BUNDESLIGA: {
+    GK: [
+      { name: "Lukáš Hrádecký", club: "Bayer Leverkusen", rating: 8.8, baseCleanSheets: 18, baseSaves: 94 },
+      { name: "Manuel Neuer", club: "Bayern Munich", rating: 8.7, baseCleanSheets: 15, baseSaves: 96 },
+      { name: "Gregor Kobel", club: "Borussia Dortmund", rating: 8.7, baseCleanSheets: 15, baseSaves: 115 }
+    ],
+    DF: [
+      { name: "Alejandro Grimaldo", club: "Bayer Leverkusen", slot: "LB", rating: 9.0, baseCS: 17, baseTk: 65, baseG: 10, baseA: 13 },
+      { name: "Alphonso Davies", club: "Bayern Munich", slot: "LB", rating: 8.6, baseCS: 14, baseTk: 70, baseG: 2, baseA: 6 },
+      { name: "Jonathan Tah", club: "Bayer Leverkusen", slot: "CB", rating: 8.8, baseCS: 18, baseTk: 86, baseG: 4, baseA: 1 },
+      { name: "Nico Schlotterbeck", club: "Borussia Dortmund", slot: "CB", rating: 8.6, baseCS: 15, baseTk: 88, baseG: 2, baseA: 3 },
+      { name: "Dayot Upamecano", club: "Bayern Munich", slot: "CB", rating: 8.6, baseCS: 15, baseTk: 82, baseG: 1, baseA: 0 },
+      { name: "Jeremie Frimpong", club: "Bayer Leverkusen", slot: "RB", rating: 8.9, baseCS: 16, baseTk: 66, baseG: 9, baseA: 9 },
+      { name: "Joshua Kimmich", club: "Bayern Munich", slot: "RB", rating: 8.8, baseCS: 15, baseTk: 80, baseG: 2, baseA: 10 }
+    ],
+    MF: [
+      { name: "Florian Wirtz", club: "Bayer Leverkusen", slot: "LCM", rating: 9.2, baseG: 18, baseA: 19, baseTk: 50 },
+      { name: "Granit Xhaka", club: "Bayer Leverkusen", slot: "CM", rating: 8.9, baseG: 4, baseA: 8, baseTk: 94 },
+      { name: "Jamal Musiala", club: "Bayern Munich", slot: "RCM", rating: 9.0, baseG: 15, baseA: 10, baseTk: 52 },
+      { name: "Julian Brandt", club: "Borussia Dortmund", slot: "RCM", rating: 8.5, baseG: 9, baseA: 12, baseTk: 44 }
+    ],
+    FW: [
+      { name: "Harry Kane", club: "Bayern Munich", slot: "ST", rating: 9.3, baseG: 36, baseA: 10 },
+      { name: "Serhou Guirassy", club: "Borussia Dortmund", slot: "ST", rating: 8.8, baseG: 26, baseA: 4 },
+      { name: "Leroy Sané", club: "Bayern Munich", slot: "LW", rating: 8.7, baseG: 14, baseA: 13 },
+      { name: "Michael Olise", club: "Bayern Munich", slot: "RW", rating: 8.7, baseG: 13, baseA: 11 },
+      { name: "Loïs Openda", club: "RB Leipzig", slot: "LW", rating: 8.6, baseG: 24, baseA: 7 },
+      { name: "Victor Boniface", club: "Bayer Leverkusen", slot: "RW", rating: 8.6, baseG: 16, baseA: 8 }
+    ]
+  },
+  LIGUE_1: {
+    GK: [
+      { name: "Gianluigi Donnarumma", club: "Paris Saint-Germain", rating: 8.8, baseCleanSheets: 17, baseSaves: 102 },
+      { name: "Lucas Chevalier", club: "Lille OSC", rating: 8.6, baseCleanSheets: 16, baseSaves: 110 }
+    ],
+    DF: [
+      { name: "Nuno Mendes", club: "Paris Saint-Germain", slot: "LB", rating: 8.6, baseCS: 16, baseTk: 66, baseG: 2, baseA: 6 },
+      { name: "Marquinhos", club: "Paris Saint-Germain", slot: "CB", rating: 8.8, baseCS: 18, baseTk: 85, baseG: 2, baseA: 1 },
+      { name: "Willian Pacho", club: "Paris Saint-Germain", slot: "CB", rating: 8.6, baseCS: 17, baseTk: 82, baseG: 1, baseA: 0 },
+      { name: "Achraf Hakimi", club: "Paris Saint-Germain", slot: "RB", rating: 8.8, baseCS: 17, baseTk: 74, baseG: 5, baseA: 8 }
+    ],
+    MF: [
+      { name: "Vitinha", club: "Paris Saint-Germain", slot: "CM", rating: 8.9, baseG: 9, baseA: 8, baseTk: 80 },
+      { name: "Warren Zaïre-Emery", club: "Paris Saint-Germain", slot: "RCM", rating: 8.7, baseG: 5, baseA: 6, baseTk: 75 },
+      { name: "João Neves", club: "Paris Saint-Germain", slot: "LCM", rating: 8.7, baseG: 4, baseA: 9, baseTk: 84 }
+    ],
+    FW: [
+      { name: "Bradley Barcola", club: "Paris Saint-Germain", slot: "LW", rating: 8.8, baseG: 18, baseA: 10 },
+      { name: "Jonathan David", club: "Lille OSC", slot: "ST", rating: 8.7, baseG: 22, baseA: 6 },
+      { name: "Ousmane Dembélé", club: "Paris Saint-Germain", slot: "RW", rating: 8.8, baseG: 12, baseA: 14 }
+    ]
+  },
+  SAUDI_PRO: {
+    GK: [
+      { name: "Bono", club: "Al-Hilal SFC", rating: 8.8, baseCleanSheets: 18, baseSaves: 90 },
+      { name: "Bento", club: "Al-Nassr FC", rating: 8.6, baseCleanSheets: 15, baseSaves: 104 }
+    ],
+    DF: [
+      { name: "Renan Lodi", club: "Al-Hilal SFC", slot: "LB", rating: 8.5, baseCS: 16, baseTk: 65, baseG: 2, baseA: 5 },
+      { name: "Kalidou Koulibaly", club: "Al-Hilal SFC", slot: "CB", rating: 8.8, baseCS: 18, baseTk: 86, baseG: 3, baseA: 0 },
+      { name: "Aymeric Laporte", club: "Al-Nassr FC", slot: "CB", rating: 8.7, baseCS: 16, baseTk: 82, baseG: 3, baseA: 1 },
+      { name: "Saud Abdulhamid", club: "Al-Hilal SFC", slot: "RB", rating: 8.6, baseCS: 17, baseTk: 76, baseG: 2, baseA: 7 }
+    ],
+    MF: [
+      { name: "Rúben Neves", club: "Al-Hilal SFC", slot: "CM", rating: 8.8, baseG: 6, baseA: 11, baseTk: 80 },
+      { name: "Sergej Milinković-Savić", club: "Al-Hilal SFC", slot: "LCM", rating: 8.9, baseG: 14, baseA: 12, baseTk: 70 },
+      { name: "N'Golo Kanté", club: "Al-Ittihad", slot: "RCM", rating: 8.7, baseG: 3, baseA: 6, baseTk: 92 }
+    ],
+    FW: [
+      { name: "Sadio Mané", club: "Al-Nassr FC", slot: "LW", rating: 8.7, baseG: 16, baseA: 11 },
+      { name: "Cristiano Ronaldo", club: "Al-Nassr FC", slot: "ST", rating: 9.3, baseG: 35, baseA: 11 },
+      { name: "Aleksandar Mitrović", club: "Al-Hilal SFC", slot: "RW", rating: 8.9, baseG: 28, baseA: 6 }
+    ]
+  },
+  MLS_AMERICAS: {
+    GK: [
+      { name: "Drake Callender", club: "Inter Miami CF", rating: 8.6, baseCleanSheets: 15, baseSaves: 110 },
+      { name: "Hugo Lloris", club: "Los Angeles FC", rating: 8.6, baseCleanSheets: 14, baseSaves: 105 }
+    ],
+    DF: [
+      { name: "Jordi Alba", club: "Inter Miami CF", slot: "LB", rating: 8.7, baseCS: 14, baseTk: 64, baseG: 4, baseA: 14 },
+      { name: "Walker Zimmerman", club: "Nashville SC", slot: "CB", rating: 8.5, baseCS: 15, baseTk: 85, baseG: 3, baseA: 1 },
+      { name: "Miles Robinson", club: "FC Cincinnati", slot: "CB", rating: 8.5, baseCS: 16, baseTk: 82, baseG: 1, baseA: 0 },
+      { name: "Sergi Palencia", club: "Los Angeles FC", slot: "RB", rating: 8.4, baseCS: 14, baseTk: 75, baseG: 1, baseA: 5 }
+    ],
+    MF: [
+      { name: "Sergio Busquets", club: "Inter Miami CF", slot: "CM", rating: 8.8, baseG: 2, baseA: 12, baseTk: 85 },
+      { name: "Riqui Puig", club: "LA Galaxy", slot: "LCM", rating: 8.7, baseG: 14, baseA: 15, baseTk: 55 },
+      { name: "Luciano Acosta", club: "FC Cincinnati", slot: "RCM", rating: 8.7, baseG: 15, baseA: 16, baseTk: 45 }
+    ],
+    FW: [
+      { name: "Denis Bouanga", club: "Los Angeles FC", slot: "LW", rating: 8.8, baseG: 23, baseA: 10 },
+      { name: "Luis Suárez", club: "Inter Miami CF", slot: "ST", rating: 9.0, baseG: 25, baseA: 12 },
+      { name: "Lionel Messi", club: "Inter Miami CF", slot: "RW", rating: 9.4, baseG: 26, baseA: 18 }
+    ]
+  },
+  YOUTH_LEAGUE: {
+    GK: [
+      { name: "Fran González", club: "Real Madrid Castilla", rating: 8.2, baseCleanSheets: 14, baseSaves: 88 },
+      { name: "Diego Kochen", club: "FC Barcelona La Masia", rating: 8.1, baseCleanSheets: 13, baseSaves: 82 },
+      { name: "Elyh Harrison", club: "Man United Carrington", rating: 8.0, baseCleanSheets: 12, baseSaves: 90 }
+    ],
+    DF: [
+      { name: "Rafael Obrador", club: "Real Madrid Castilla", slot: "LB", rating: 8.0, baseCS: 13, baseTk: 60, baseG: 1, baseA: 4 },
+      { name: "Pau Cubarsí", club: "FC Barcelona La Masia", slot: "CB", rating: 8.5, baseCS: 15, baseTk: 75, baseG: 2, baseA: 1 },
+      { name: "Jacobo Ramón", club: "Real Madrid Castilla", slot: "CB", rating: 8.1, baseCS: 14, baseTk: 72, baseG: 1, baseA: 0 },
+      { name: "Héctor Fort", club: "FC Barcelona La Masia", slot: "RB", rating: 8.2, baseCS: 14, baseTk: 68, baseG: 2, baseA: 5 }
+    ],
+    MF: [
+      { name: "Nico Paz", club: "Real Madrid Castilla", slot: "LCM", rating: 8.4, baseG: 12, baseA: 9, baseTk: 55 },
+      { name: "Marc Bernal", club: "FC Barcelona La Masia", slot: "CM", rating: 8.3, baseG: 5, baseA: 8, baseTk: 70 },
+      { name: "Ethan Nwaneri", club: "Arsenal Hale End", slot: "RCM", rating: 8.3, baseG: 11, baseA: 8, baseTk: 48 }
+    ],
+    FW: [
+      { name: "Tyrique George", club: "Chelsea Cobham", slot: "LW", rating: 8.2, baseG: 14, baseA: 8 },
+      { name: "Álvaro Rodríguez", club: "Real Madrid Castilla", slot: "ST", rating: 8.4, baseG: 19, baseA: 5 },
+      { name: "Marc Guiu", club: "FC Barcelona La Masia", slot: "RW", rating: 8.3, baseG: 17, baseA: 6 }
+    ]
+  }
+};
+
+/**
+ * Đội Hình Tiêu Biểu Mùa Giải / Giải Đấu (Team of the Season - TOTS 4-3-3)
+ * @param {object} player Đối tượng người chơi
+ * @param {string|object} tournamentKey Mã giải đấu hoặc tên giải
+ * @param {Array} leagueTable Bảng xếp hạng giải đấu (nếu có)
+ * @returns {object} Dữ liệu 11 cầu thủ xếp theo sơ đồ 4-3-3
+ */
+export function generateTeamOfTheSeason(player, tournamentKey, leagueTable) {
+  const p = player || (typeof getPlayer === 'function' ? getPlayer() : null) || (typeof window !== 'undefined' && window.gameState?.player);
+  if (!p) return null;
+
+  const currentYear = p.year || 2026;
+  if (p.lastSeasonTOTS && p.lastSeasonTOTS.year === currentYear && p.lastSeasonTOTS.lineup) {
+    return p.lastSeasonTOTS;
+  }
+
+  // 1. Chuẩn hóa mã giải đấu & Tên hiển thị
+  let curKey = tournamentKey;
+  if (!curKey || typeof curKey !== 'string') {
+    if (p.isAcademyStage || p.leagueId === 'YOUTH_LEAGUE') {
+      curKey = 'YOUTH_LEAGUE';
+    } else {
+      curKey = p.currentClub?.league?.id || p.leagueId || 'PREMIER_LEAGUE';
+    }
+  }
+
+  const TOURNAMENT_NAME_MAP = {
+    PREMIER_LEAGUE: 'Premier League',
+    LA_LIGA: 'La Liga',
+    SERIE_A: 'Serie A',
+    BUNDESLIGA: 'Bundesliga',
+    LIGUE_1: 'Ligue 1',
+    SAUDI_PRO: 'Saudi Pro League',
+    MLS_AMERICAS: 'Major League Soccer',
+    EURO_SUB: 'Liga Portugal & Eredivisie',
+    YOUTH_LEAGUE: 'Giải VĐQG U19 Academy',
+    UCL: 'UEFA Champions League'
+  };
+  const tournamentName = TOURNAMENT_NAME_MAP[curKey] || p.currentClub?.league?.name || 'Giải VĐQG';
+
+  // 2. Phân tích bảng xếp hạng CLB
+  const table = Array.isArray(leagueTable) && leagueTable.length > 0
+    ? leagueTable
+    : (Array.isArray(p.leagueTable) && p.leagueTable.length > 0 ? p.leagueTable : []);
+
+  const activeClub = p.isAcademyStage ? p.academy : (p.currentClub || null);
+  let isPlayerChamp = false;
+  let isPlayerRunnerUp = false;
+
+  if (table.length > 0) {
+    const leader = table[0];
+    const runnerUp = table[1];
+    if (leader && (leader.isPlayerClub || leader.isPlayer || (activeClub && isSameClub(leader, activeClub)))) {
+      isPlayerChamp = true;
+    } else if (runnerUp && (runnerUp.isPlayerClub || runnerUp.isPlayer || (activeClub && isSameClub(runnerUp, activeClub)))) {
+      isPlayerRunnerUp = true;
+    }
+  } else if (Array.isArray(p.trophies) && p.trophies.some(t => typeof t === 'string' && t.includes('Vô Địch') && t.includes(tournamentName))) {
+    isPlayerChamp = true;
+  }
+
+  // 3. Chuẩn bị ứng viên AI từ bộ dữ liệu TOTS
+  const rawPool = TOTS_LEAGUE_CANDIDATES[curKey] || TOTS_LEAGUE_CANDIDATES.PREMIER_LEAGUE;
+
+  const evalAI = (c, line) => {
+    let isChamp = false;
+    let isRunnerUp = false;
+    if (table.length > 0) {
+      const cName = String(c.club || '').toLowerCase();
+      if (table[0] && (table[0].clubName || table[0].name || '').toLowerCase().includes(cName)) isChamp = true;
+      else if (table[1] && (table[1].clubName || table[1].name || '').toLowerCase().includes(cName)) isRunnerUp = true;
+    }
+    let stats = {};
+    if (line === 'GK') {
+      stats = { matches: 36, cleanSheets: c.baseCleanSheets, saves: c.baseSaves, avgRating: c.rating };
+    } else if (line === 'DF') {
+      stats = { matches: 36, cleanSheets: c.baseCS, tackles: c.baseTk, goals: c.baseG, assists: c.baseA, avgRating: c.rating };
+    } else if (line === 'MF') {
+      stats = { matches: 36, goals: c.baseG, assists: c.baseA, tackles: c.baseTk, avgRating: c.rating };
+    } else {
+      stats = { matches: 36, goals: c.baseG, assists: c.baseA, avgRating: c.rating };
+    }
+    const score = calculateTournamentMvpScore(stats, line, isChamp, isRunnerUp, { isLeague: true });
+    let statText = "";
+    if (line === 'GK') statText = `${c.baseCleanSheets} 🧤 ${c.baseSaves} 🛡️`;
+    else if (line === 'DF') statText = `${c.baseCS} 🧤 ${c.baseTk} 🛡️`;
+    else if (line === 'MF') statText = `${c.baseA} 🎯 ${c.baseG > 0 ? c.baseG + ' ⚽' : ''}`;
+    else statText = `${c.baseG} ⚽ ${c.baseA > 0 ? c.baseA + ' 🎯' : ''}`;
+
+    return {
+      ...c,
+      pos: c.slot || line,
+      line,
+      statText,
+      mvpScore: Number(score.toFixed(1)),
+      isPlayer: false
+    };
+  };
+
+  const aiGK = (rawPool.GK || []).map(c => evalAI(c, 'GK'));
+  const aiDF = (rawPool.DF || []).map(c => evalAI(c, 'DF'));
+  const aiMF = (rawPool.MF || []).map(c => evalAI(c, 'MF'));
+  const aiFW = (rawPool.FW || []).map(c => evalAI(c, 'FW'));
+
+  // 4. Tính toán điểm số Người Chơi
+  const pLine = getPlayerLine(p);
+  const pPos = String(p.position || 'ST').toUpperCase();
+  const pStats = {
+    matches: p.currentSeasonStats?.matches || p.seasonAccumulator?.matches || (p.currentFixtureIndex != null ? p.currentFixtureIndex + 1 : 18),
+    goals: p.currentSeasonStats?.goals || p.seasonAccumulator?.goals || 0,
+    assists: p.currentSeasonStats?.assists || p.seasonAccumulator?.assists || 0,
+    cleanSheets: p.currentSeasonStats?.cleanSheets || p.seasonAccumulator?.cs || 0,
+    saves: p.currentSeasonStats?.saves || p.seasonAccumulator?.saves || 0,
+    tackles: p.currentSeasonStats?.tackles || p.seasonAccumulator?.tackles || 0,
+    avgRating: p.lastSeasonAvgRating || 7.5
+  };
+  const pMvpScore = calculateTournamentMvpScore(pStats, pLine, isPlayerChamp, isPlayerRunnerUp, { isLeague: true });
+
+  let pStatText = "";
+  if (pLine === 'GK') pStatText = `${pStats.cleanSheets} 🧤 ${pStats.saves} 🛡️`;
+  else if (pLine === 'DF') pStatText = `${pStats.cleanSheets} 🧤 ${pStats.tackles} 🛡️`;
+  else if (pLine === 'MF') pStatText = `${pStats.assists} 🎯 ${pStats.goals > 0 ? pStats.goals + ' ⚽' : ''}`;
+  else pStatText = `${pStats.goals} ⚽ ${pStats.assists > 0 ? pStats.assists + ' 🎯' : ''}`;
+
+  const playerCandidate = {
+    name: p.name || "Bạn",
+    club: p.isAcademyStage ? (p.academy?.name || "Học Viện Trẻ") : (p.currentClub?.name || "CLB"),
+    pos: pPos,
+    line: pLine,
+    rating: Number((pStats.avgRating || 7.5).toFixed(1)),
+    statText: pStatText,
+    mvpScore: Number(pMvpScore.toFixed(1)),
+    isPlayer: true
+  };
+
+  const hasEnoughMatches = pStats.matches >= 6;
+
+  // 5. Tuyển chọn 11 vị trí (Sơ đồ 4-3-3: 1 GK, 4 DF, 3 MF, 3 FW)
+  const lineup = {};
+
+  // 5.1 Thủ môn (1 GK)
+  const gkCandidates = [...aiGK];
+  if (pLine === 'GK' && hasEnoughMatches) {
+    gkCandidates.push(playerCandidate);
+  }
+  gkCandidates.sort((a, b) => b.mvpScore - a.mvpScore);
+  lineup.gk = { ...gkCandidates[0], pos: 'GK' };
+
+  // 5.2 Hàng hậu vệ (4 DF: LB, CB1, CB2, RB)
+  const dfCandidates = [...aiDF];
+  if (pLine === 'DF' && hasEnoughMatches) {
+    dfCandidates.push(playerCandidate);
+  }
+  dfCandidates.sort((a, b) => b.mvpScore - a.mvpScore);
+
+  const isPlayerTop4DF = pLine === 'DF' && hasEnoughMatches && dfCandidates.slice(0, 4).some(c => c.isPlayer);
+  let playerAssignedSlot = null;
+
+  if (isPlayerTop4DF) {
+    if (['LB', 'LWB'].includes(pPos)) playerAssignedSlot = 'lb';
+    else if (['RB', 'RWB'].includes(pPos)) playerAssignedSlot = 'rb';
+    else playerAssignedSlot = 'cb1';
+    lineup[playerAssignedSlot] = { ...playerCandidate, pos: pPos };
+  }
+
+  // Lấp đầy các vị trí DF còn lại
+  const aiLBs = aiDF.filter(c => c.slot === 'LB');
+  const aiRBs = aiDF.filter(c => c.slot === 'RB');
+  const aiCBs = aiDF.filter(c => c.slot === 'CB' || (!c.slot && c.pos === 'CB'));
+
+  if (!lineup.lb) lineup.lb = aiLBs[0] || dfCandidates.find(c => !c.isPlayer) || aiDF[0];
+  if (!lineup.rb) lineup.rb = aiRBs[0] || dfCandidates.find(c => !c.isPlayer && c !== lineup.lb) || aiDF[1];
+  
+  const remainingCBs = aiCBs.filter(c => c !== lineup.lb && c !== lineup.rb);
+  if (!lineup.cb1) lineup.cb1 = remainingCBs[0] || dfCandidates.find(c => !c.isPlayer && c !== lineup.lb && c !== lineup.rb) || aiDF[2];
+  if (!lineup.cb2) lineup.cb2 = remainingCBs[1] || dfCandidates.find(c => !c.isPlayer && c !== lineup.lb && c !== lineup.rb && c !== lineup.cb1) || aiDF[3];
+
+  // 5.3 Hàng tiền vệ (3 MF: LCM, CM, RCM)
+  const mfCandidates = [...aiMF];
+  if (pLine === 'MF' && hasEnoughMatches) {
+    mfCandidates.push(playerCandidate);
+  }
+  mfCandidates.sort((a, b) => b.mvpScore - a.mvpScore);
+
+  const isPlayerTop3MF = pLine === 'MF' && hasEnoughMatches && mfCandidates.slice(0, 3).some(c => c.isPlayer);
+  if (isPlayerTop3MF) {
+    let mfSlot = 'cm';
+    if (['CDM', 'LM'].includes(pPos)) mfSlot = 'lcm';
+    else if (['RM'].includes(pPos)) mfSlot = 'rcm';
+    lineup[mfSlot] = { ...playerCandidate, pos: pPos };
+
+    const otherMFs = mfCandidates.filter(c => !c.isPlayer);
+    const slotsToFill = ['lcm', 'cm', 'rcm'].filter(s => s !== mfSlot);
+    lineup[slotsToFill[0]] = { ...otherMFs[0], pos: slotsToFill[0].toUpperCase() };
+    lineup[slotsToFill[1]] = { ...otherMFs[1], pos: slotsToFill[1].toUpperCase() };
+  } else {
+    lineup.lcm = { ...mfCandidates[0], pos: 'LCM' };
+    lineup.cm = { ...mfCandidates[1], pos: 'CM' };
+    lineup.rcm = { ...mfCandidates[2], pos: 'RCM' };
+  }
+
+  // 5.4 Hàng tiền đạo (3 FW: LW, ST, RW)
+  const fwCandidates = [...aiFW];
+  if (pLine === 'FW' && hasEnoughMatches) {
+    fwCandidates.push(playerCandidate);
+  }
+  fwCandidates.sort((a, b) => b.mvpScore - a.mvpScore);
+
+  const isPlayerTop3FW = pLine === 'FW' && hasEnoughMatches && fwCandidates.slice(0, 3).some(c => c.isPlayer);
+  if (isPlayerTop3FW) {
+    let fwSlot = 'st';
+    if (pPos === 'LW') fwSlot = 'lw';
+    else if (pPos === 'RW') fwSlot = 'rw';
+    lineup[fwSlot] = { ...playerCandidate, pos: pPos };
+
+    const otherFWs = fwCandidates.filter(c => !c.isPlayer);
+    const slotsToFill = ['lw', 'st', 'rw'].filter(s => s !== fwSlot);
+    lineup[slotsToFill[0]] = { ...otherFWs[0], pos: slotsToFill[0].toUpperCase() };
+    lineup[slotsToFill[1]] = { ...otherFWs[1], pos: slotsToFill[1].toUpperCase() };
+  } else {
+    lineup.lw = { ...fwCandidates[0], pos: 'LW' };
+    lineup.st = { ...fwCandidates[1], pos: 'ST' };
+    lineup.rw = { ...fwCandidates[2], pos: 'RW' };
+  }
+
+  // 6. Kiểm tra xem Người chơi có lọt vào Đội hình tiêu biểu không
+  const playerSelected = Boolean(
+    (lineup.gk && lineup.gk.isPlayer) ||
+    (lineup.lb && lineup.lb.isPlayer) ||
+    (lineup.cb1 && lineup.cb1.isPlayer) ||
+    (lineup.cb2 && lineup.cb2.isPlayer) ||
+    (lineup.rb && lineup.rb.isPlayer) ||
+    (lineup.lcm && lineup.lcm.isPlayer) ||
+    (lineup.cm && lineup.cm.isPlayer) ||
+    (lineup.rcm && lineup.rcm.isPlayer) ||
+    (lineup.lw && lineup.lw.isPlayer) ||
+    (lineup.st && lineup.st.isPlayer) ||
+    (lineup.rw && lineup.rw.isPlayer)
+  );
+
+  // 7. Ghi nhận trạng thái, danh hiệu & truyền thông khi Người chơi lọt vào TOTS
+  if (playerSelected) {
+    const totsTrophyTitle = `Đội Hình Tiêu Biểu ${tournamentName}`;
+    addTrophy(p, totsTrophyTitle);
+
+    if (!p.seasonTrophiesWonThisYear) p.seasonTrophiesWonThisYear = [];
+    if (!p.seasonTrophiesWonThisYear.includes(totsTrophyTitle)) {
+      p.seasonTrophiesWonThisYear.push(totsTrophyTitle);
+    }
+
+    p.fame = (p.fame || 0) + 500;
+    p.morale = Math.min(100, (p.morale || 70) + 5);
+
+    if (!p.individualAwards) p.individualAwards = [];
+    const awardId = `tots_${curKey}_${currentYear}`;
+    if (!p.individualAwards.some(a => a.id === awardId || (a.name === totsTrophyTitle && a.year === currentYear))) {
+      p.individualAwards.push({
+        id: awardId,
+        name: totsTrophyTitle,
+        year: currentYear,
+        age: p.age || 16,
+        stat: `${pMvpScore.toFixed(1)} điểm MVP`,
+        icon: "🌟"
+      });
+    }
+
+    addMediaReaction(p, {
+      category: 'AWARDS',
+      badge: 'GOLD',
+      source: 'Hiệp Hội Cầu Thủ & Truyền Thông',
+      author: 'Hội Đồng Bình Chọn TOTS',
+      role: 'Đội Hình Tiêu Biểu Mùa Giải',
+      avatar: '🌟',
+      headline: `CHÍNH THỨC: [Tên Cầu Thủ] được xướng tên vào Đội Hình Tiêu Biểu của giải đấu!`,
+      content: `CHÍNH THỨC: [Tên Cầu Thủ] được xướng tên vào Đội Hình Tiêu Biểu của giải đấu! Một vị trí hoàn toàn xứng đáng cho phong độ phi thường xuyên suốt mùa giải.`
+    });
+
+    if (typeof recordChronicleMilestone === 'function') {
+      recordChronicleMilestone(p, 'TOTS_SELECTION', {
+        title: totsTrophyTitle,
+        desc: `Góp mặt trong Đội Hình Tiêu Biểu Mùa Giải ${tournamentName} (Sơ đồ 4-3-3 | ${pMvpScore.toFixed(1)} điểm MVP)!`,
+        badge: "🌟 ĐỘI HÌNH TIÊU BIỂU",
+        badgeColor: "gold",
+        category: "individual",
+        icon: "🌟"
+      });
+    }
+  }
+
+  const totsResult = {
+    tournamentKey: curKey,
+    tournamentName,
+    formation: "4-3-3",
+    year: currentYear,
+    age: p.age || 16,
+    playerIncluded: playerSelected,
+    playerSlot: playerSelected ? Object.keys(lineup).find(k => lineup[k].isPlayer) : null,
+    playerMvpScore: Number(pMvpScore.toFixed(1)),
+    lineup
+  };
+
+  p.lastSeasonTOTS = totsResult;
+  return totsResult;
 }
 
 /* =========================================================================
@@ -2394,6 +2938,16 @@ export function simulateAcademyRound(player, actionTitle, actionReport) {
     reportRows.push({ icon: "🎯", title: "[Vua Kiến Tạo C1 Trẻ]", text: `🎯 VUA KIẾN TẠO UEFA Youth League — ${uylAVal} kiến tạo!` });
   }
 
+  // Đội Hình Tiêu Biểu U19 Academy (Team of the Season - TOTS 4-3-3)
+  const totsResult = generateTeamOfTheSeason(player, 'YOUTH_LEAGUE', player.leagueTable);
+  if (totsResult && totsResult.playerIncluded) {
+    reportRows.push({
+      icon: "🌟",
+      title: "[Đội Hình Tiêu Biểu U19]",
+      text: `🌟 Vinh danh trong Đội Hình Tiêu Biểu Giải VĐQG U19 Academy (Sơ đồ 4-3-3 | ${totsResult.playerMvpScore} điểm MVP)!`
+    });
+  }
+
   reportRows.push(
     { icon: "👑", title: "[Bình chọn Tài Năng Trẻ]", text: `Tài năng trẻ triển vọng (Chưa lọt Top 30 Quả Bóng Vàng)` },
     { icon: "🏷️", title: "[Định giá Transfermarkt]", text: `${((player.marketValue || 1000000) / 1000000).toFixed(1)}M € (Tài năng trẻ nổi bật)` },
@@ -2458,7 +3012,8 @@ export function simulateAcademyRound(player, actionTitle, actionReport) {
     academyTackles: tk,
     seasonTrophiesWon,
     seasonTrophiesWonList,
-    parentClub
+    parentClub,
+    totsResult
   };
 }
 
